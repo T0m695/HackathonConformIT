@@ -6,15 +6,22 @@ from typing import List, Dict
 def get_connection():
     """Crée une connexion à la base de données PostgreSQL."""
     try:
-        print("🔍 DEBUG: Tentative de connexion à PostgreSQL...")
-        print(f"🔍 DEBUG: Host=localhost, Database=hackathon, User=postgres, Port=5432")
+        # Utiliser host.docker.internal si on est dans Docker, sinon localhost
+        db_host = os.getenv("DB_HOST", "localhost")
+        db_port = os.getenv("DB_PORT", "5432")
+        db_name = os.getenv("DB_NAME", "hackathon")
+        db_user = os.getenv("DB_USER", "postgres")
+        db_password = os.getenv("DB_PASSWORD", "admin")
+        
+        print(f"🔍 DEBUG: Tentative de connexion à PostgreSQL...")
+        print(f"🔍 DEBUG: Host={db_host}, Database={db_name}, User={db_user}, Port={db_port}")
         
         conn = psycopg2.connect(
-            host="localhost",
-            database="hackathon",
-            user="postgres",
-            password="admin",
-            port=5432,
+            host=db_host,
+            database=db_name,
+            user=db_user,
+            password=db_password,
+            port=db_port,
             connect_timeout=10,
             options="-c search_path=public"
         )
@@ -44,10 +51,11 @@ def get_connection():
     except psycopg2.OperationalError as e:
         print(f"❌ Erreur de connexion PostgreSQL (OperationalError): {e}")
         print("💡 Vérifiez que:")
-        print("   - PostgreSQL est démarré")
-        print("   - Le port 5432 est accessible")
-        print("   - La base de données 'hackathon' existe")
-        print("   - L'utilisateur 'postgres' a accès à la base 'hackathon'")
+        print(f"   - PostgreSQL est démarré")
+        print(f"   - Le port {db_port} est accessible")
+        print(f"   - La base de données '{db_name}' existe")
+        print(f"   - L'utilisateur '{db_user}' a accès à la base '{db_name}'")
+        print("   - Si vous êtes dans Docker, utilisez DB_HOST=host.docker.internal")
         raise
     except Exception as e:
         print(f"❌ Erreur de connexion PostgreSQL: {e}")
