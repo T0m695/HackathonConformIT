@@ -21,4 +21,4 @@ ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
 # Commande par défaut
-CMD ["python", "main.py"]
+CMD ["python", "app.py"]
