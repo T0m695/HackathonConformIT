@@ -87,8 +87,8 @@ class EventAgent:
             return False
     
     def create_context(self) -> str:
-        """Crée le contexte avec tous les événements."""
-        context = "Liste des événements disponibles:\n\n"
+        """Crée le contexte avec tous les événements et leurs mesures correctives."""
+        context = "Liste des événements de sécurité disponibles:\n\n"
         for i, event in enumerate(self.events, 1):
             context += f"Événement {i}:{format_event(event)}\n"
         return context
@@ -100,8 +100,10 @@ class EventAgent:
         
         context = self.create_context()
         
-        system_prompt = """Tu es un assistant intelligent spécialisé dans la recommandation d'événements.
-Tu dois aider les utilisateurs à trouver des événements qui correspondent à leurs intérêts.
+        system_prompt = """Tu es un assistant intelligent spécialisé dans la sécurité industrielle chez TechnoPlast.
+Tu aides les utilisateurs à trouver des événements de sécurité et les mesures correctives associées.
+Les événements incluent des incidents, des accidents, des quasi-accidents, et des mesures préventives.
+Chaque événement peut avoir plusieurs mesures correctives associées.
 Base tes recommandations uniquement sur les événements fournis dans le contexte.
 Réponds de manière claire et concise en français avec des emojis appropriés."""
         

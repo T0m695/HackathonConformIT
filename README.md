@@ -26,6 +26,11 @@ Accédez à http://localhost:8000
 - **Backend** : FastAPI + PostgreSQL
 - **Frontend** : HTML/CSS/JavaScript + Chart.js
 - **IA** : AWS Bedrock (Claude 3 Haiku)
+- **Données** : Événements de sécurité avec mesures correctives associées
+
+## 📊 Structure des données
+
+Le système charge les événements (`event`) avec leurs mesures correctives (`corrective_measure`) associées via la table de liaison `event_corrective_measure`.
 
 ## 🐳 Docker
 
@@ -43,10 +48,12 @@ docker run -p 8000:8000 --env-file .env technoplast-dashboard
    psql -h localhost -U postgres -d hackathon
    ```
 
-2. **Vérifier que la table existe**:
+2. **Vérifier que les tables existent**:
    ```sql
    \c hackathon
+   SELECT COUNT(*) FROM event;
    SELECT COUNT(*) FROM corrective_measure;
+   SELECT COUNT(*) FROM event_corrective_measure;
    ```
 
 3. **Vérifier les credentials**:
