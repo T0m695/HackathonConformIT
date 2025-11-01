@@ -132,10 +132,11 @@ function updateMonthlyChart(monthlyStats) {
 function updateRecentEvents(events) {
     const container = document.getElementById('recentEventsList');
     container.innerHTML = events.map(event => `
-        <div class="event-item">
+        <a href="/event/${event.id}" class="event-item event-link">
             <h4>${event.titre}</h4>
             <p>📅 ${event.date} | 📍 ${event.lieu} | 🏷️ ${event.categorie}</p>
-        </div>
+            ${event.nb_mesures > 0 ? `<p class="measures-count">🔧 ${event.nb_mesures} mesure(s) corrective(s)</p>` : ''}
+        </a>
     `).join('');
 }
 

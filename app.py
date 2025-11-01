@@ -52,6 +52,81 @@ async def chat(request: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/event/{event_id}", response_class=HTMLResponse)
+async def event_detail_page(event_id: int):
+    """Serve the event detail page."""
+    with open("templates/event-detail.html", "r", encoding="utf-8") as f:
+        return f.read()
+
+@app.get("/api/event/{event_id}")
+async def get_event_details(event_id: int):
+    """Get detailed information about a specific event."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        
+        # Get event details with corrective measures
+        cursor.execute("""
+            SELECT 
+                e.event_id as id,
+                COALESCE(e.classification, 'Classification inconnue') as titre,
+                COALESCE(e.description, 'Description non disponible') as description,
+                COALESCE(TO_CHAR(e.start_datetime, 'YYYY-MM-DD'), '2024-01-01') as date,
+                CASE 
+                    WHEN e.end_datetime IS NULL THEN 'En cours'
+                    ELSE 'Résolu le ' || TO_CHAR(e.end_datetime, 'YYYY-MM-DD')
+                END as statut,
+                e.end_datetime IS NULL as en_cours,
+                e.type as categorie,
+                COALESCE(ou.location, 'Non spécifié') as lieu,
+                COALESCE(p.name || ' ' || p.family_name, 'Non spécifié') as personne,
+                COALESCE(r.name, 'Non spécifié') as risque,
+                COALESCE(r.gravity, 'Non spécifié') as gravite,
+                COALESCE(r.probability, 'Non spécifié') as probabilite,
+                (
+                    SELECT json_agg(
+                        json_build_object(
+                            'measure_id', cm.measure_id,
+                            'name', cm.name,
+                            'description', cm.description,
+                            'implementation_date', TO_CHAR(cm.implementation_date, 'YYYY-MM-DD'),
+                            'cost', cm.cost::text
+                        )
+                    )
+                    FROM event_corrective_measure ecm
+                    JOIN corrective_measure cm ON ecm.measure_id = cm.measure_id
+                    WHERE ecm.event_id = e.event_id
+                ) as mesures_correctives
+            FROM event e
+            LEFT JOIN organizational_unit ou ON e.organizational_unit_id = ou.unit_id
+            LEFT JOIN person p ON e.declared_by_id = p.person_id
+            LEFT JOIN event_risk ON e.event_id = event_risk.event_id
+            LEFT JOIN risk r ON event_risk.risk_id = r.risk_id
+            WHERE e.event_id = %s
+        """, (event_id,))
+        
+        event = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        if not event:
+            raise HTTPException(status_code=404, detail="Événement non trouvé")
+        
+        # Convert to dict and handle null mesures_correctives
+        event_dict = dict(event)
+        if not event_dict.get('mesures_correctives'):
+            event_dict['mesures_correctives'] = []
+            
+        return event_dict
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Erreur: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/metrics")
 async def get_metrics(duration: int = 12):
     """Get database metrics for the dashboard."""
@@ -78,7 +153,7 @@ async def get_metrics(duration: int = 12):
         # Recent events avec mesures correctives
         cursor.execute("""
             SELECT 
-                e.event_id,
+                e.event_id as id,
                 COALESCE(e.classification, 'Classification inconnue') as titre,
                 COALESCE(TO_CHAR(e.start_datetime, 'YYYY-MM-DD'), '2024-01-01') as date,
                 COALESCE(ou.location, 'Non spécifié') as lieu,
@@ -97,6 +172,7 @@ async def get_metrics(duration: int = 12):
         recent_events = []
         for row in cursor.fetchall():
             recent_events.append({
+                "id": row[0],
                 "titre": row[1],
                 "date": row[2],
                 "lieu": row[3],
