@@ -103,11 +103,11 @@ async def get_metrics(duration: int = 12):
             # Pour "Tous", récupérer tous les événements sans filtre de date
             cursor.execute("""
                 SELECT 
-                    TO_CHAR(cm.implementation_date, 'YYYY-MM') as month,
+                    TO_CHAR(e.start_datetime, 'YYYY-MM') as month,
                     COUNT(*) as count
-                FROM corrective_measure cm
-                WHERE cm.implementation_date IS NOT NULL
-                GROUP BY TO_CHAR(cm.implementation_date, 'YYYY-MM')
+                FROM event e
+                WHERE e.start_datetime IS NOT NULL
+                GROUP BY TO_CHAR(e.start_datetime, 'YYYY-MM')
                 ORDER BY month DESC
             """)
         else:
@@ -121,10 +121,10 @@ async def get_metrics(duration: int = 12):
                 )
                 SELECT 
                     m.month,
-                    COALESCE(COUNT(cm.measure_id), 0) as count
+                    COALESCE(COUNT(e.event_id), 0) as count
                 FROM months m
-                LEFT JOIN corrective_measure cm 
-                    ON TO_CHAR(cm.implementation_date, 'YYYY-MM') = m.month
+                LEFT JOIN event e
+                    ON TO_CHAR(e.start_datetime, 'YYYY-MM') = m.month
                 GROUP BY m.month
                 ORDER BY m.month DESC
             """, (duration,))
