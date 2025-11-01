@@ -136,66 +136,48 @@ def load_events() -> List[Dict]:
         
         print("🔍 DEBUG: Chargement des événements depuis PostgreSQL...")
         
-        # Interroger directement la table avec les colonnes du dump SQL
         query = """
             SELECT 
-                measure_id as id,
-                name as titre,
-                description,
-                TO_CHAR(implementation_date, 'YYYY-MM-DD') as date,
-                cost::text as cout,
-                organizational_unit_id as unite,
+                cm.measure_id as id,
+                cm.name as titre,
+                cm.description,
+                TO_CHAR(cm.implementation_date, 'YYYY-MM-DD') as date,
+                cm.cost::text as cout,
+                cm.organizational_unit_id as unite_id,
+                COALESCE(ou.location, 'Non spécifié') as lieu,
                 'Mesure corrective' as categorie
-            FROM corrective_measure 
-            ORDER BY measure_id DESC 
+            FROM corrective_measure cm
+            LEFT JOIN organizational_unit ou ON cm.organizational_unit_id = ou.unit_id
+            ORDER BY cm.measure_id DESC 
             LIMIT 100
         """
         
-        print(f"🔍 DEBUG: Exécution de la requête...")
         cursor.execute(query)
         rows = cursor.fetchall()
-        print(f"✅ {len(rows)} événements chargés depuis PostgreSQL")
+        print(f"✅ {len(rows)} événements chargés")
         
         events = []
         for row in rows:
             event = dict(row)
             
-            # Ajouter des valeurs par défaut si nécessaire
             if not event.get('titre'):
                 event['titre'] = f"Mesure corrective #{event.get('id', 'N/A')}"
             if not event.get('description'):
                 event['description'] = 'Description non disponible'
             if not event.get('date'):
                 event['date'] = '2024-01-01'
-            if not event.get('categorie'):
-                event['categorie'] = 'Mesure corrective'
             
-            if event.get('unite'):
-                event['lieu'] = f"Unité {event['unite']}"
-            else:
-                event['lieu'] = 'Non spécifié'
+            event['categorie'] = 'Mesure corrective'
                 
             events.append(event)
         
         cursor.close()
         conn.close()
             
-        if events:
-            print(f"✅ Premier événement chargé:")
-            print(f"   ID: {events[0].get('id')}")
-            print(f"   Titre: {events[0].get('titre')[:50]}...")
-            
         return events
         
-    except psycopg2.Error as e:
-        print(f"❌ Erreur PostgreSQL lors du chargement: {e.pgerror if hasattr(e, 'pgerror') else str(e)}")
-        import traceback
-        traceback.print_exc()
-        return []
     except Exception as e:
         print(f"❌ Erreur lors du chargement: {e}")
-        import traceback
-        traceback.print_exc()
         return []
 
 def format_event(event: Dict) -> str:

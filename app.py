@@ -53,100 +53,101 @@ async def chat(request: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/metrics")
-async def get_metrics():
+async def get_metrics(duration: int = 12):
     """Get database metrics for the dashboard."""
     try:
-        print("🔍 DEBUG: Début de get_metrics()")
         conn = get_connection()
         cursor = conn.cursor()
         
-        # Essayer d'interroger directement la table
-        try:
-            cursor.execute("SELECT COUNT(*) FROM corrective_measure")
-            total_events = cursor.fetchone()[0]
-            print(f"✅ Total événements: {total_events}")
-        except psycopg2.Error as e:
-            print(f"❌ Erreur lors de la requête corrective_measure: {e}")
-            raise HTTPException(status_code=500, detail=f"Impossible d'accéder à la table corrective_measure: {str(e)}")
+        cursor.execute("SELECT COUNT(*) FROM event")
+        total_events = cursor.fetchone()[0]
         
-        # Events by organizational unit
+        # Events by location
         cursor.execute("""
             SELECT 
-                COALESCE(CAST(organizational_unit_id AS VARCHAR), 'Non spécifié') as unit_name,
-                COUNT(*) as count 
-            FROM corrective_measure 
-            GROUP BY organizational_unit_id
+                COALESCE(ou.location, 'Non spécifié') as location_name,
+                COUNT(*) as count
+            FROM event e
+            LEFT JOIN organizational_unit ou ON e.organizational_unit_id = ou.unit_id
+            GROUP BY ou.location
             ORDER BY count DESC
             LIMIT 10
         """)
-        categories = [{"name": f"Unité {row[0]}", "count": row[1]} for row in cursor.fetchall()]
-        print(f"✅ Catégories: {len(categories)}")
+        categories = [{"name": row[0], "count": row[1]} for row in cursor.fetchall()]
         
-        # Recent events
+        # Recent events avec vraies localisations
         cursor.execute("""
             SELECT 
-                measure_id,
-                COALESCE(name, 'Mesure corrective') as titre,
-                COALESCE(TO_CHAR(implementation_date, 'YYYY-MM-DD'), '2024-01-01') as date,
-                CONCAT('Unité ', COALESCE(CAST(organizational_unit_id AS VARCHAR), 'N/A')) as lieu,
+                e.event_id,
+                COALESCE(e.classification, 'Classification inconnue') as titre,
+                COALESCE(TO_CHAR(e.start_datetime, 'YYYY-MM-DD'), '2024-01-01') as date,
+                COALESCE(ou.location, 'Non spécifié') as lieu,
                 'Mesure corrective' as categorie
-            FROM corrective_measure 
-            ORDER BY measure_id DESC 
+            FROM event e
+            LEFT JOIN organizational_unit ou ON e.organizational_unit_id = ou.unit_id
+            ORDER BY e.start_datetime DESC 
             LIMIT 10
         """)
         
         recent_events = []
         for row in cursor.fetchall():
             recent_events.append({
-                "titre": row[1] if len(row) > 1 else f"Mesure #{row[0]}",
-                "date": row[2] if len(row) > 2 else "2024-01-01",
-                "lieu": row[3] if len(row) > 3 else "Non spécifié",
-                "categorie": row[4] if len(row) > 4 else "Mesure corrective"
+                "titre": row[1],
+                "date": row[2],
+                "lieu": row[3],
+                "categorie": row[4]
             })
         
-        print(f"✅ Événements récents: {len(recent_events)}")
+        # Events by month avec durée paramétrable - gérer le cas "Tous"
+        if duration >= 999:
+            # Pour "Tous", récupérer tous les événements sans filtre de date
+            cursor.execute("""
+                SELECT 
+                    TO_CHAR(cm.implementation_date, 'YYYY-MM') as month,
+                    COUNT(*) as count
+                FROM corrective_measure cm
+                WHERE cm.implementation_date IS NOT NULL
+                GROUP BY TO_CHAR(cm.implementation_date, 'YYYY-MM')
+                ORDER BY month DESC
+            """)
+        else:
+            # Pour une durée spécifique, générer tous les mois
+            cursor.execute("""
+                WITH months AS (
+                    SELECT TO_CHAR(
+                        CURRENT_DATE - INTERVAL '1 month' * generate_series(0, %s - 1),
+                        'YYYY-MM'
+                    ) as month
+                )
+                SELECT 
+                    m.month,
+                    COALESCE(COUNT(cm.measure_id), 0) as count
+                FROM months m
+                LEFT JOIN corrective_measure cm 
+                    ON TO_CHAR(cm.implementation_date, 'YYYY-MM') = m.month
+                GROUP BY m.month
+                ORDER BY m.month DESC
+            """, (duration,))
         
-        # Events by month
-        cursor.execute("""
-            SELECT 
-                TO_CHAR(implementation_date, 'YYYY-MM') as month,
-                COUNT(*) as count
-            FROM corrective_measure
-            WHERE implementation_date IS NOT NULL
-            GROUP BY TO_CHAR(implementation_date, 'YYYY-MM')
-            ORDER BY month DESC
-            LIMIT 12
-        """)
         monthly_stats = [{"month": row[0], "count": row[1]} for row in cursor.fetchall()]
-        
-        print(f"✅ Statistiques mensuelles: {len(monthly_stats)}")
         
         cursor.close()
         conn.close()
         
-        result = {
+        return {
             "total_events": total_events,
             "categories": categories,
             "recent_events": recent_events,
             "monthly_stats": monthly_stats,
+            "duration": duration,
             "timestamp": datetime.now().isoformat()
         }
         
-        print("✅ get_metrics() terminé avec succès")
-        return result
-        
-    except psycopg2.Error as e:
-        error_msg = f"Erreur PostgreSQL: {e.pgerror if hasattr(e, 'pgerror') else str(e)}"
-        print(f"❌ {error_msg}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=error_msg)
     except Exception as e:
-        error_msg = f"Erreur base de données: {str(e)}"
-        print(f"❌ {error_msg}")
+        print(f"❌ Erreur: {e}")
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=error_msg)
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/health")
 async def health_check():

@@ -46,7 +46,17 @@
                     </div>
                     
                     <div class="chart-wrapper">
-                        <h3>Événements par mois</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h3>Événements par mois</h3>
+                            <select id="monthlyDuration" style="padding: 5px 10px; border-radius: 4px; border: 1px solid #ccc;">
+                                <option value="3">3 mois</option>
+                                <option value="6">6 mois</option>
+                                <option value="12" selected>12 mois</option>
+                                <option value="24">24 mois</option>
+                                <option value="36">36 mois</option>
+                                <option value="999">Tous</option>
+                            </select>
+                        </div>
                         <canvas id="monthlyChart"></canvas>
                     </div>
                 </div>

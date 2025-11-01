@@ -6,14 +6,33 @@ document.addEventListener('DOMContentLoaded', () => {
     loadMetrics();
     setupChat();
     setupSuggestions();
+    setupMonthlyDurationChange();
     
     // Refresh metrics every 30 seconds
-    setInterval(loadMetrics, 30000);
+    setInterval(() => loadMetrics(), 30000);
 });
 
-async function loadMetrics() {
+function setupMonthlyDurationChange() {
+    const durationSelect = document.getElementById('monthlyDuration');
+    if (durationSelect) {
+        durationSelect.addEventListener('change', (e) => {
+            const duration = parseInt(e.target.value);
+            console.log(`🔄 Changement de durée: ${duration} mois`);
+            loadMetrics(duration);
+        });
+    }
+}
+
+async function loadMetrics(duration = null) {
     try {
-        const response = await fetch('/api/metrics');
+        // Get duration from selector if not provided
+        if (!duration) {
+            const durationSelect = document.getElementById('monthlyDuration');
+            duration = durationSelect ? parseInt(durationSelect.value) : 12;
+        }
+        
+        console.log(`📊 Chargement des métriques pour ${duration} mois`);
+        const response = await fetch(`/api/metrics?duration=${duration}`);
         const data = await response.json();
         
         // Update metric cards
@@ -27,8 +46,10 @@ async function loadMetrics() {
         // Update recent events
         updateRecentEvents(data.recent_events);
         
+        console.log(`✅ Métriques mises à jour avec succès`);
+        
     } catch (error) {
-        console.error('Erreur chargement métriques:', error);
+        console.error('❌ Erreur chargement métriques:', error);
     }
 }
 
@@ -67,8 +88,11 @@ function updateMonthlyChart(monthlyStats) {
     const ctx = document.getElementById('monthlyChart');
     
     if (monthlyChart) {
+        console.log('🔄 Destruction de l\'ancien graphique mensuel');
         monthlyChart.destroy();
     }
+    
+    console.log(`📈 Création du graphique avec ${monthlyStats.length} points de données`);
     
     monthlyChart = new Chart(ctx, {
         type: 'line',
@@ -93,11 +117,16 @@ function updateMonthlyChart(monthlyStats) {
             },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
                 }
             }
         }
     });
+    
+    console.log('✅ Graphique mensuel créé avec succès');
 }
 
 function updateRecentEvents(events) {
