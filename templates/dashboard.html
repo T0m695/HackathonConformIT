@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechnoPlast Safety Dashboard</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏭 TechnoPlast Safety Dashboard</h1>
+            <div class="status-badge" id="status">
+                <span class="dot"></span> En ligne
+            </div>
+        </header>
+
+        <div class="dashboard-grid">
+            <!-- Metrics Section -->
+            <section class="metrics-section">
+                <h2>📊 Métriques en temps réel</h2>
+                
+                <div class="metric-cards">
+                    <div class="metric-card">
+                        <div class="metric-icon">📝</div>
+                        <div class="metric-content">
+                            <div class="metric-label">Total Événements</div>
+                            <div class="metric-value" id="totalEvents">-</div>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-icon">📂</div>
+                        <div class="metric-content">
+                            <div class="metric-label">Catégories</div>
+                            <div class="metric-value" id="totalCategories">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-wrapper">
+                        <h3>Distribution par catégorie</h3>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-wrapper">
+                        <h3>Événements par mois</h3>
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="recent-events">
+                    <h3>🕒 Événements récents</h3>
+                    <div id="recentEventsList"></div>
+                </div>
+            </section>
+
+            <!-- Chatbot Section -->
+            <section class="chatbot-section">
+                <h2>💬 Assistant IA</h2>
+                
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message bot-message">
+                            <div class="message-content">
+                                👋 Bonjour! Je suis votre assistant pour trouver des événements de sécurité. Comment puis-je vous aider?
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-container">
+                        <input 
+                            type="text" 
+                            id="chatInput" 
+                            placeholder="Posez votre question..."
+                            autocomplete="off"
+                        >
+                        <button id="sendButton">Envoyer</button>
+                    </div>
+                </div>
+
+                <div class="suggestions">
+                    <h4>💡 Suggestions:</h4>
+                    <div class="suggestion-buttons">
+                        <button class="suggestion-btn">Événements de sécurité</button>
+                        <button class="suggestion-btn">Mesures correctives</button>
+                        <button class="suggestion-btn">Derniers incidents</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
