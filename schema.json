@@ -1,0 +1,368 @@
+{
+    "tables": {
+        "person": {
+            "columns": [
+                {
+                    "name": "person_id",
+                    "type": "INTEGER",
+                    "synonyms": [],
+                    "description": "Identifiant unique de la personne"
+                },
+                {
+                    "name": "matricule",
+                    "type": "VARCHAR(255)",
+                    "synonyms": ["numéro_employé", "identifiant_employé", "badge", "code_employé"],
+                    "description": "Numéro de matricule employé (badge, code RH)"
+                },
+                {
+                    "name": "name",
+                    "type": "VARCHAR(255)",
+                    "synonyms": ["prénom", "prenom", "first_name", "nom_usuel"],
+                    "description": "Prénom de la personne"
+                },
+                {
+                    "name": "family_name",
+                    "type": "VARCHAR(255)",
+                    "synonyms": ["nom", "nom_famille", "last_name", "patronyme"],
+                    "description": "Nom de famille"
+                },
+                {
+                    "name": "role",
+                    "type": "VARCHAR(255)",
+                    "synonyms": ["fonction", "poste", "métier", "position", "titre"],
+                    "description": "Fonction, poste ou métier (ex: technicien, manager, opérateur)"
+                }
+            ],
+            "description": "Employés et personnes impliquées dans les événements (déclarants, témoins, victimes)"
+        },
+        "event_employee": {
+            "columns": [
+                {
+                    "name": "event_id",
+                    "type": "INTEGER",
+                    "synonyms": [],
+                    "description": "Référence à l'événement"
+                },
+                {
+                    "name": "person_id",
+                    "type": "INTEGER",
+                    "synonyms": [],
+                    "description": "Référence à la personne impliquée"
+                },
+                {
+                    "name": "involvement_type",
+                    "type": "VARCHAR(255)",
+                    "synonyms": ["type_implication", "rôle_événement", "participation", "statut_implication"],
+                    "description": "Type d'implication : victime, témoin, intervenant, responsable"
+                }
+            ],
+            "description": "Association entre événements et personnes avec leur type d'implication"
+        },
+        "event": {
+            "columns": [
+                {
+                    "name": "event_id",
+                    "type": "INTEGER",
+                    "synonyms": [],
+                    "description": "Identifiant unique de l'événement"
+                },
+                {
+                    "name": "declared_by_id",
+                    "type": "INTEGER",
+                    "synonyms": [],
+                    "description": "Personne ayant déclaré l'événement (référence person.person_id)"
+                },
+                {
+                    "name": "description",
+                    "type": "TEXT",
+                    "synonyms": ["détails", "details", "récit", "compte_rendu", "narration"],
+                    "description": "Description détaillée de l'événement, circonstances, contexte"
+                },
+                {
+                    "name": "start_datetime",
+                    "type": "TIMESTAMP",
+                    "synonyms": ["date_début", "heure_début", "début", "commencement"],
+                    "description": "Date et heure de début ou survenue de l'événement"
+                },
+                {
+                    "name": "end_datetime",
+                    "type": "TIMESTAMP",
+                    "synonyms": ["date_fin", "heure_fin", "fin", "clôture"],
+                    "description": "Date et heure de fin de l'événement (si applicable)"
+                },
+                {
+                    "name": "organizational_unit_id",
+                    "type": "INTEGER",
+                    "synonyms": [],
+                    "description": "Unité organisationnelle où s'est produit l'événement"
+                },
+                {
+                    "name": "type",
+                    "type": "VARCHAR(50)",
+                    "synonyms": ["catégorie", "categorie", "nature", "genre_événement"],
+                    "description": "Type d'événement : incident, accident, observation, presque-accident, non-conformité"
+                },
+                {
+                    "name": "classification",
+                    "type": "VARCHAR(50)",
+                    "synonyms": ["classe", "niveau", "gravité", "gravite", "sévérité", "criticité"],
+                    "description": "Niveau de criticité : LOW, MEDIUM, HIGH, CRITICAL"
+                }
+            ],
+            "description": "Événements de sécurité : incidents, accidents, observations, presques-accidents"
+        },
+        "organizational_unit": {
+            "columns": [
+                {
+                    "name": "unit_id",
+                    "type": "INTEGER",
+                    "synonyms": [],
+                    "description": "Identifiant unique de l'unité organisationnelle"
+                },
+                {
+                    "name": "identifier",
+                    "type": "VARCHAR(255)",
+                    "synonyms": ["code", "référence", "reference", "code_unité"],
+                    "description": "Code ou référence interne de l'unité"
+                },
+                {
+                    "name": "name",
+                    "type": "VARCHAR(255)",
+                    "synonyms": ["nom_unité", "nom_unite", "libellé", "libelle", "désignation", "intitulé"],
+                    "description": "Nom de l'unité (département, service, équipe)"
+                },
+                {
+                    "name": "location",
+                    "type": "VARCHAR(255)",
+                    "synonyms": ["lieu", "site", "localisation", "emplacement", "adresse"],
+                    "description": "Localisation géographique ou site"
+                }
+            ],
+            "description": "Unités organisationnelles : départements, services, sites, zones"
+        },
+        "event_corrective_measure": {
+            "columns": [
+                {
+                    "name": "event_id",
+                    "type": "INTEGER",
+                    "synonyms": [],
+                    "description": "Référence à l'événement"
+                },
+                {
+                    "name": "measure_id",
+                    "type": "INTEGER",
+                    "synonyms": [],
+                    "description": "Référence à la mesure corrective"
+                }
+            ],
+            "description": "Liaison entre événements et mesures correctives associées"
+        },
+        "corrective_measure": {
+            "columns": [
+                {
+                    "name": "measure_id",
+                    "type": "INTEGER",
+                    "synonyms": [],
+                    "description": "Identifiant unique de la mesure corrective"
+                },
+                {
+                    "name": "name",
+                    "type": "VARCHAR(255)",
+                    "synonyms": ["nom_mesure", "intitulé_mesure", "titre", "libellé_mesure"],
+                    "description": "Nom ou titre court de la mesure"
+                },
+                {
+                    "name": "description",
+                    "type": "TEXT",
+                    "synonyms": ["détails", "details", "précisions", "explications", "contenu"],
+                    "description": "Description détaillée de l'action à réaliser"
+                },
+                {
+                    "name": "owner_id",
+                    "type": "INTEGER",
+                    "synonyms": [],
+                    "description": "Responsable de la mise en œuvre (référence person.person_id)"
+                },
+                {
+                    "name": "implementation_date",
+                    "type": "DATE",
+                    "synonyms": ["date_mise_en_oeuvre", "date_application", "date_réalisation", "échéance"],
+                    "description": "Date prévue ou effective de mise en œuvre"
+                },
+                {
+                    "name": "cost",
+                    "type": "NUMERIC(12, 2)",
+                    "synonyms": ["coût", "cout", "montant", "prix", "budget"],
+                    "description": "Coût estimé ou réel en euros"
+                },
+                {
+                    "name": "organizational_unit_id",
+                    "type": "INTEGER",
+                    "synonyms": [],
+                    "description": "Unité organisationnelle responsable"
+                }
+            ],
+            "description": "Actions correctives et préventives mises en place suite aux événements"
+        },
+        "event_risk": {
+            "columns": [
+                {
+                    "name": "event_id",
+                    "type": "INTEGER",
+                    "synonyms": [],
+                    "description": "Référence à l'événement"
+                },
+                {
+                    "name": "risk_id",
+                    "type": "INTEGER",
+                    "synonyms": [],
+                    "description": "Référence au risque"
+                }
+            ],
+            "description": "Risques identifiés et associés aux événements"
+        },
+        "risk": {
+            "columns": [
+                {
+                    "name": "risk_id",
+                    "type": "INTEGER",
+                    "synonyms": [],
+                    "description": "Identifiant unique du risque"
+                },
+                {
+                    "name": "name",
+                    "type": "VARCHAR(200)",
+                    "synonyms": ["nom_risque", "intitulé_risque", "type_risque", "désignation_risque"],
+                    "description": "Nom du risque (ex: chute de hauteur, exposition chimique, coupure)"
+                },
+                {
+                    "name": "gravity",
+                    "type": "VARCHAR(20)",
+                    "synonyms": ["gravité", "gravite", "sévérité", "severite", "impact", "criticité"],
+                    "description": "Gravité potentielle : LOW, MEDIUM, HIGH, CRITICAL"
+                },
+                {
+                    "name": "probability",
+                    "type": "VARCHAR(20)",
+                    "synonyms": ["probabilité", "probabilite", "fréquence", "frequence", "vraisemblance", "occurrence"],
+                    "description": "Probabilité d'occurrence : RARE, UNLIKELY, POSSIBLE, LIKELY, CERTAIN"
+                }
+            ],
+            "description": "Catalogue des risques avec évaluation de gravité et probabilité"
+        }
+    },
+    "relationships": [
+        {
+            "from": "event_employee",
+            "to": "event",
+            "on": "event_id",
+            "type": "foreign_key",
+            "description": "Chaque implication de personne est liée à un événement"
+        },
+        {
+            "from": "event_employee",
+            "to": "person",
+            "on": "person_id",
+            "type": "foreign_key",
+            "description": "Chaque implication référence une personne spécifique"
+        },
+        {
+            "from": "event",
+            "to": "organizational_unit",
+            "on": "organizational_unit_id",
+            "type": "foreign_key",
+            "description": "Chaque événement se produit dans une unité organisationnelle"
+        },
+        {
+            "from": "event",
+            "to": "person",
+            "on": "declared_by_id",
+            "type": "foreign_key",
+            "description": "Chaque événement est déclaré par une personne"
+        },
+        {
+            "from": "event_corrective_measure",
+            "to": "event",
+            "on": "event_id",
+            "type": "foreign_key",
+            "description": "Chaque mesure corrective est associée à un événement"
+        },
+        {
+            "from": "event_corrective_measure",
+            "to": "corrective_measure",
+            "on": "measure_id",
+            "type": "foreign_key",
+            "description": "Référence vers la mesure corrective spécifique"
+        },
+        {
+            "from": "corrective_measure",
+            "to": "organizational_unit",
+            "on": "organizational_unit_id",
+            "type": "foreign_key",
+            "description": "Chaque mesure est rattachée à une unité organisationnelle"
+        },
+        {
+            "from": "corrective_measure",
+            "to": "person",
+            "on": "owner_id",
+            "type": "foreign_key",
+            "description": "Chaque mesure a un responsable de mise en œuvre"
+        },
+        {
+            "from": "event_risk",
+            "to": "event",
+            "on": "event_id",
+            "type": "foreign_key",
+            "description": "Association entre événement et risque identifié"
+        },
+        {
+            "from": "event_risk",
+            "to": "risk",
+            "on": "risk_id",
+            "type": "foreign_key",
+            "description": "Référence vers le risque du catalogue"
+        }
+    ],
+    "sample_queries": [
+        {
+            "natural_language": "Liste tous les événements de 2024",
+            "sql": "SELECT event_id, type, classification, start_datetime, description FROM event WHERE EXTRACT(YEAR FROM start_datetime) = 2024 ORDER BY start_datetime DESC LIMIT 100;"
+        },
+        {
+            "natural_language": "Compte les événements par type",
+            "sql": "SELECT type, COUNT(*) as nombre_evenements FROM event GROUP BY type ORDER BY nombre_evenements DESC;"
+        },
+        {
+            "natural_language": "Trouve les événements critiques avec leurs déclarants",
+            "sql": "SELECT e.event_id, e.description, e.start_datetime, p.name, p.family_name FROM event e JOIN person p ON e.declared_by_id = p.person_id WHERE e.classification = 'CRITICAL' ORDER BY e.start_datetime DESC LIMIT 50;"
+        },
+        {
+            "natural_language": "Liste les mesures correctives avec leur coût total",
+            "sql": "SELECT name, description, cost, implementation_date FROM corrective_measure WHERE cost IS NOT NULL ORDER BY cost DESC LIMIT 100;"
+        },
+        {
+            "natural_language": "Trouve les événements avec risque de gravité HIGH",
+            "sql": "SELECT e.event_id, e.type, e.description, r.name as risque, r.gravity FROM event e JOIN event_risk er ON e.event_id = er.event_id JOIN risk r ON er.risk_id = r.risk_id WHERE r.gravity = 'HIGH' LIMIT 100;"
+        },
+        {
+            "natural_language": "Liste les événements par unité organisationnelle",
+            "sql": "SELECT ou.name as unite, COUNT(e.event_id) as nombre_evenements FROM organizational_unit ou JOIN event e ON ou.unit_id = e.organizational_unit_id GROUP BY ou.name ORDER BY nombre_evenements DESC;"
+        },
+        {
+            "natural_language": "Trouve les personnes impliquées dans les événements comme victimes",
+            "sql": "SELECT p.name, p.family_name, p.role, e.type, e.start_datetime FROM person p JOIN event_employee ee ON p.person_id = ee.person_id JOIN event e ON ee.event_id = e.event_id WHERE ee.involvement_type = 'victime' ORDER BY e.start_datetime DESC LIMIT 100;"
+        },
+        {
+            "natural_language": "Calcule le coût total des mesures correctives par unité",
+            "sql": "SELECT ou.name as unite, SUM(cm.cost) as cout_total, COUNT(cm.measure_id) as nombre_mesures FROM organizational_unit ou JOIN corrective_measure cm ON ou.unit_id = cm.organizational_unit_id WHERE cm.cost IS NOT NULL GROUP BY ou.name ORDER BY cout_total DESC;"
+        },
+        {
+            "natural_language": "Liste les événements entre deux dates",
+            "sql": "SELECT event_id, type, classification, description, start_datetime FROM event WHERE start_datetime BETWEEN '2024-01-01' AND '2024-12-31' ORDER BY start_datetime DESC LIMIT 100;"
+        },
+        {
+            "natural_language": "Trouve les risques les plus fréquents",
+            "sql": "SELECT r.name, r.gravity, r.probability, COUNT(er.event_id) as nombre_occurrences FROM risk r JOIN event_risk er ON r.risk_id = er.risk_id GROUP BY r.risk_id, r.name, r.gravity, r.probability ORDER BY nombre_occurrences DESC LIMIT 20;"
+        }
+    ]
+}
