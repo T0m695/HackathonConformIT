@@ -1,173 +1,202 @@
-import sqlite3
+import psycopg2
+import psycopg2.extras
 import os
-import re
 from typing import List, Dict
 
 def get_connection():
-    """Crée une connexion à la base de données SQLite."""
-    # Utiliser un répertoire db pour Docker ou le répertoire courant
-    if os.path.exists('/app/db'):
-        db_path = '/app/db/events.db'
-    else:
-        db_path = os.path.join(os.path.dirname(__file__), 'events.db')
-    
-    print(f"🔍 DEBUG: Chemin de la base de données: {db_path}")
-    
-    # Créer le répertoire si nécessaire
-    os.makedirs(os.path.dirname(db_path), exist_ok=True)
-    
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-def parse_postgresql_data():
-    """Parse les données du fichier PostgreSQL et les convertit pour SQLite."""
+    """Crée une connexion à la base de données PostgreSQL."""
     try:
-        sql_file_path = os.path.join(os.path.dirname(__file__), 'data', 'events.sql')
-        print(f"🔍 DEBUG: Lecture du fichier PostgreSQL: {sql_file_path}")
+        print("🔍 DEBUG: Tentative de connexion à PostgreSQL...")
+        print(f"🔍 DEBUG: Host=localhost, Database=hackathon, User=postgres, Port=5432")
         
-        with open(sql_file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
+        conn = psycopg2.connect(
+            host="localhost",
+            database="hackathon",
+            user="postgres",
+            password="admin",
+            port=5432,
+            connect_timeout=10,
+            options="-c search_path=public"
+        )
         
-        # Extraire les données de la table corrective_measure
-        # Chercher les lignes COPY qui contiennent les données
-        copy_pattern = r'COPY public\.corrective_measure.*?FROM stdin;(.*?)\\\\.'
-        match = re.search(copy_pattern, content, re.DOTALL)
+        # Set schema explicitly
+        cursor = conn.cursor()
+        cursor.execute("SET search_path TO public;")
+        conn.commit()
+        cursor.close()
         
-        events = []
-        if match:
-            data_lines = match.group(1).strip().split('\n')
-            print(f"🔍 DEBUG: Trouvé {len(data_lines)} lignes de données")
-            
-            for line in data_lines:
-                if line.strip() and not line.startswith('--'):
-                    # Parse chaque ligne de données (format tab-separated)
-                    parts = line.split('\t')
-                    if len(parts) >= 6:
-                        events.append({
-                            'titre': parts[1] if len(parts) > 1 else 'Événement',
-                            'date': parts[4] if len(parts) > 4 and parts[4] != '\\N' else '2024-01-01',
-                            'lieu': f"Unité {parts[6]}" if len(parts) > 6 else 'Non spécifié',
-                            'description': parts[2] if len(parts) > 2 else 'Description non disponible',
-                            'categorie': 'Mesure corrective'
-                        })
+        print("✅ Connexion PostgreSQL établie avec succès")
         
-        print(f"🔍 DEBUG: {len(events)} événements extraits du fichier PostgreSQL")
-        return events
+        # Test immédiat de la connexion
+        cursor = conn.cursor()
+        cursor.execute("SELECT version();")
+        version = cursor.fetchone()
+        print(f"✅ Version PostgreSQL: {version[0][:50]}...")
         
+        # Vérifier le search_path
+        cursor.execute("SHOW search_path;")
+        search_path = cursor.fetchone()
+        print(f"✅ Search path: {search_path[0]}")
+        
+        cursor.close()
+        
+        return conn
+    except psycopg2.OperationalError as e:
+        print(f"❌ Erreur de connexion PostgreSQL (OperationalError): {e}")
+        print("💡 Vérifiez que:")
+        print("   - PostgreSQL est démarré")
+        print("   - Le port 5432 est accessible")
+        print("   - La base de données 'hackathon' existe")
+        print("   - L'utilisateur 'postgres' a accès à la base 'hackathon'")
+        raise
     except Exception as e:
-        print(f"❌ DEBUG: Erreur lors du parsing PostgreSQL: {e}")
-        return []
+        print(f"❌ Erreur de connexion PostgreSQL: {e}")
+        raise
 
 def init_database():
-    """Initialise la base de données à partir du fichier SQL."""
-    conn = get_connection()
-    cursor = conn.cursor()
-    
+    """Vérifie que la base de données PostgreSQL est accessible."""
     try:
-        print(f"🔍 DEBUG: Initialisation de la base de données")
+        conn = get_connection()
+        cursor = conn.cursor()
         
-        # Créer la table events compatible SQLite
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS events (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                titre TEXT NOT NULL,
-                date TEXT,
-                lieu TEXT,
-                description TEXT,
-                categorie TEXT
-            )
-        ''')
+        print("🔍 DEBUG: Vérification de la base de données PostgreSQL...")
         
-        # Vérifier si la table est vide
-        cursor.execute("SELECT COUNT(*) FROM events")
-        count = cursor.fetchone()[0]
-        print(f"🔍 DEBUG: Nombre d'événements existants: {count}")
+        # Vérifier toutes les bases de données disponibles
+        cursor.execute("SELECT datname FROM pg_database WHERE datistemplate = false;")
+        databases = cursor.fetchall()
+        print(f"🔍 DEBUG: Bases de données disponibles: {[db[0] for db in databases]}")
         
-        if count == 0:
-            print("🔍 DEBUG: Chargement des données depuis le fichier PostgreSQL...")
-            # Charger les vraies données depuis le fichier SQL
-            real_events = parse_postgresql_data()
-            
-            if real_events:
-                for event in real_events:
-                    cursor.execute(
-                        "INSERT INTO events (titre, date, lieu, description, categorie) VALUES (?, ?, ?, ?, ?)",
-                        (event['titre'], event['date'], event['lieu'], event['description'], event['categorie'])
-                    )
-                print(f"🔍 DEBUG: {len(real_events)} événements réels insérés")
-            else:
-                print("⚠️ DEBUG: Aucune donnée trouvée, utilisation de données de test minimales")
-                # Insérer seulement quelques données de test si le parsing échoue
-                test_events = [
-                    ("Conférence Sécurité", "2024-03-15", "Salle principale", "Formation sur les mesures de sécurité", "Formation"),
-                    ("Audit Qualité", "2024-04-20", "Bureau qualité", "Audit des processus qualité", "Audit"),
-                ]
-                cursor.executemany(
-                    "INSERT INTO events (titre, date, lieu, description, categorie) VALUES (?, ?, ?, ?, ?)",
-                    test_events
-                )
+        # Vérifier tous les schémas disponibles
+        cursor.execute("SELECT nspname FROM pg_namespace WHERE nspname NOT LIKE 'pg_%' AND nspname != 'information_schema';")
+        schemas = cursor.fetchall()
+        print(f"🔍 DEBUG: Schémas disponibles: {[s[0] for s in schemas]}")
+        
+        # Vérifier les tables dans tous les schémas
+        cursor.execute("""
+            SELECT schemaname, tablename 
+            FROM pg_tables 
+            WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
+            ORDER BY schemaname, tablename;
+        """)
+        all_tables = cursor.fetchall()
+        print(f"🔍 DEBUG: Toutes les tables trouvées:")
+        for schema, table in all_tables:
+            print(f"   - {schema}.{table}")
+        
+        # Vérifier spécifiquement corrective_measure
+        cursor.execute("""
+            SELECT schemaname, tablename, tableowner
+            FROM pg_tables 
+            WHERE tablename = 'corrective_measure';
+        """)
+        cm_tables = cursor.fetchall()
+        if cm_tables:
+            print(f"🔍 DEBUG: Table corrective_measure trouvée dans:")
+            for schema, table, owner in cm_tables:
+                print(f"   - Schéma: {schema}, Propriétaire: {owner}")
+                
+                # Compter les enregistrements
+                cursor.execute(f"SELECT COUNT(*) FROM {schema}.corrective_measure")
+                count = cursor.fetchone()[0]
+                print(f"     Nombre d'enregistrements: {count}")
+                
+                # Lister les colonnes
+                cursor.execute(f"""
+                    SELECT column_name, data_type 
+                    FROM information_schema.columns 
+                    WHERE table_schema = '{schema}' 
+                    AND table_name = 'corrective_measure'
+                    ORDER BY ordinal_position;
+                """)
+                columns = cursor.fetchall()
+                print(f"     Colonnes: {[(col[0], col[1]) for col in columns]}")
+        else:
+            print("❌ Table corrective_measure NON TROUVÉE dans aucun schéma!")
         
         conn.commit()
-        print("✓ Base de données initialisée avec succès")
-        
-        # Test de vérification des tables créées
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-        tables = cursor.fetchall()
-        print(f"🔍 DEBUG: Tables créées: {[table[0] for table in tables]}")
-        
-        # Vérifier le contenu final
-        cursor.execute("SELECT COUNT(*) FROM events")
-        final_count = cursor.fetchone()[0]
-        print(f"🔍 DEBUG: Nombre total d'événements: {final_count}")
-        
-    except Exception as e:
-        print(f"✗ Erreur lors de l'initialisation: {e}")
-    finally:
+        cursor.close()
         conn.close()
+        print("✓ Diagnostic de la base de données terminé")
+        
+    except psycopg2.Error as e:
+        print(f"❌ Erreur PostgreSQL: {e.pgerror if hasattr(e, 'pgerror') else str(e)}")
+        print(f"Code d'erreur: {e.pgcode if hasattr(e, 'pgcode') else 'N/A'}")
+        import traceback
+        traceback.print_exc()
+    except Exception as e:
+        print(f"✗ Erreur lors de la vérification: {e}")
+        import traceback
+        traceback.print_exc()
 
 def load_events() -> List[Dict]:
-    """Charge tous les événements depuis la base de données."""
-    conn = get_connection()
-    cursor = conn.cursor()
-    
+    """Charge tous les événements depuis PostgreSQL."""
     try:
-        print("🔍 DEBUG: Tentative de chargement des événements...")
+        conn = get_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         
-        # Vérifier si la table existe
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='events';")
-        table_exists = cursor.fetchone()
-        print(f"🔍 DEBUG: Table 'events' existe: {table_exists is not None}")
+        print("🔍 DEBUG: Chargement des événements depuis PostgreSQL...")
         
-        if not table_exists:
-            print("⚠️ DEBUG: Table 'events' n'existe pas, initialisation requise")
-            return []
+        # Interroger directement la table avec les colonnes du dump SQL
+        query = """
+            SELECT 
+                measure_id as id,
+                name as titre,
+                description,
+                TO_CHAR(implementation_date, 'YYYY-MM-DD') as date,
+                cost::text as cout,
+                organizational_unit_id as unite,
+                'Mesure corrective' as categorie
+            FROM corrective_measure 
+            ORDER BY measure_id DESC 
+            LIMIT 100
+        """
         
-        cursor.execute("SELECT * FROM events")
+        print(f"🔍 DEBUG: Exécution de la requête...")
+        cursor.execute(query)
         rows = cursor.fetchall()
-        print(f"🔍 DEBUG: Nombre d'événements trouvés: {len(rows)}")
+        print(f"✅ {len(rows)} événements chargés depuis PostgreSQL")
         
         events = []
         for row in rows:
-            event = {
-                'id': row['id'],
-                'titre': row['titre'],
-                'date': row['date'],
-                'lieu': row['lieu'],
-                'description': row['description'],
-                'categorie': row['categorie']
-            }
+            event = dict(row)
+            
+            # Ajouter des valeurs par défaut si nécessaire
+            if not event.get('titre'):
+                event['titre'] = f"Mesure corrective #{event.get('id', 'N/A')}"
+            if not event.get('description'):
+                event['description'] = 'Description non disponible'
+            if not event.get('date'):
+                event['date'] = '2024-01-01'
+            if not event.get('categorie'):
+                event['categorie'] = 'Mesure corrective'
+            
+            if event.get('unite'):
+                event['lieu'] = f"Unité {event['unite']}"
+            else:
+                event['lieu'] = 'Non spécifié'
+                
             events.append(event)
+        
+        cursor.close()
+        conn.close()
             
         if events:
-            print(f"🔍 DEBUG: Premier événement chargé: {events[0]['titre']}")
+            print(f"✅ Premier événement chargé:")
+            print(f"   ID: {events[0].get('id')}")
+            print(f"   Titre: {events[0].get('titre')[:50]}...")
             
         return events
-    except Exception as e:
-        print(f"❌ DEBUG: Erreur lors du chargement des événements: {e}")
+        
+    except psycopg2.Error as e:
+        print(f"❌ Erreur PostgreSQL lors du chargement: {e.pgerror if hasattr(e, 'pgerror') else str(e)}")
+        import traceback
+        traceback.print_exc()
         return []
-    finally:
-        conn.close()
+    except Exception as e:
+        print(f"❌ Erreur lors du chargement: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
 
 def format_event(event: Dict) -> str:
     """Formate un événement pour l'affichage."""

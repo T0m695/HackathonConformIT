@@ -3,8 +3,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 import uvicorn
+import psycopg2
+import psycopg2.extras
 from agent import EventAgent
-from database import get_connection
+from database import get_connection, init_database
 from typing import Dict, List
 import os
 from datetime import datetime
@@ -54,63 +56,97 @@ async def chat(request: ChatRequest):
 async def get_metrics():
     """Get database metrics for the dashboard."""
     try:
+        print("🔍 DEBUG: Début de get_metrics()")
         conn = get_connection()
         cursor = conn.cursor()
         
-        # Total events
-        cursor.execute("SELECT COUNT(*) FROM events")
-        total_events = cursor.fetchone()[0]
+        # Essayer d'interroger directement la table
+        try:
+            cursor.execute("SELECT COUNT(*) FROM corrective_measure")
+            total_events = cursor.fetchone()[0]
+            print(f"✅ Total événements: {total_events}")
+        except psycopg2.Error as e:
+            print(f"❌ Erreur lors de la requête corrective_measure: {e}")
+            raise HTTPException(status_code=500, detail=f"Impossible d'accéder à la table corrective_measure: {str(e)}")
         
-        # Events by category
-        cursor.execute("""
-            SELECT categorie, COUNT(*) as count 
-            FROM events 
-            GROUP BY categorie
-            ORDER BY count DESC
-        """)
-        categories = [{"name": row[0], "count": row[1]} for row in cursor.fetchall()]
-        
-        # Recent events (last 10)
-        cursor.execute("""
-            SELECT titre, date, lieu, categorie 
-            FROM events 
-            ORDER BY date DESC 
-            LIMIT 10
-        """)
-        recent_events = [
-            {
-                "titre": row[0],
-                "date": row[1],
-                "lieu": row[2],
-                "categorie": row[3]
-            }
-            for row in cursor.fetchall()
-        ]
-        
-        # Events by month (if dates are parseable)
+        # Events by organizational unit
         cursor.execute("""
             SELECT 
-                strftime('%Y-%m', date) as month,
+                COALESCE(CAST(organizational_unit_id AS VARCHAR), 'Non spécifié') as unit_name,
+                COUNT(*) as count 
+            FROM corrective_measure 
+            GROUP BY organizational_unit_id
+            ORDER BY count DESC
+            LIMIT 10
+        """)
+        categories = [{"name": f"Unité {row[0]}", "count": row[1]} for row in cursor.fetchall()]
+        print(f"✅ Catégories: {len(categories)}")
+        
+        # Recent events
+        cursor.execute("""
+            SELECT 
+                measure_id,
+                COALESCE(name, 'Mesure corrective') as titre,
+                COALESCE(TO_CHAR(implementation_date, 'YYYY-MM-DD'), '2024-01-01') as date,
+                CONCAT('Unité ', COALESCE(CAST(organizational_unit_id AS VARCHAR), 'N/A')) as lieu,
+                'Mesure corrective' as categorie
+            FROM corrective_measure 
+            ORDER BY measure_id DESC 
+            LIMIT 10
+        """)
+        
+        recent_events = []
+        for row in cursor.fetchall():
+            recent_events.append({
+                "titre": row[1] if len(row) > 1 else f"Mesure #{row[0]}",
+                "date": row[2] if len(row) > 2 else "2024-01-01",
+                "lieu": row[3] if len(row) > 3 else "Non spécifié",
+                "categorie": row[4] if len(row) > 4 else "Mesure corrective"
+            })
+        
+        print(f"✅ Événements récents: {len(recent_events)}")
+        
+        # Events by month
+        cursor.execute("""
+            SELECT 
+                TO_CHAR(implementation_date, 'YYYY-MM') as month,
                 COUNT(*) as count
-            FROM events
-            WHERE date IS NOT NULL
-            GROUP BY month
+            FROM corrective_measure
+            WHERE implementation_date IS NOT NULL
+            GROUP BY TO_CHAR(implementation_date, 'YYYY-MM')
             ORDER BY month DESC
             LIMIT 12
         """)
         monthly_stats = [{"month": row[0], "count": row[1]} for row in cursor.fetchall()]
         
+        print(f"✅ Statistiques mensuelles: {len(monthly_stats)}")
+        
+        cursor.close()
         conn.close()
         
-        return {
+        result = {
             "total_events": total_events,
             "categories": categories,
             "recent_events": recent_events,
             "monthly_stats": monthly_stats,
             "timestamp": datetime.now().isoformat()
         }
+        
+        print("✅ get_metrics() terminé avec succès")
+        return result
+        
+    except psycopg2.Error as e:
+        error_msg = f"Erreur PostgreSQL: {e.pgerror if hasattr(e, 'pgerror') else str(e)}"
+        print(f"❌ {error_msg}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=error_msg)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur base de données: {str(e)}")
+        error_msg = f"Erreur base de données: {str(e)}"
+        print(f"❌ {error_msg}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=error_msg)
 
 @app.get("/api/health")
 async def health_check():
