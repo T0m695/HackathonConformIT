@@ -1,0 +1,20 @@
+services:
+  hackathon-app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: hackathon-conformit
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+    volumes:
+      - ./data:/app/data
+      - db_volume:/app/db
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+volumes:
+  db_volume:
