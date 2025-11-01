@@ -75,14 +75,19 @@ async def get_metrics(duration: int = 12):
         """)
         categories = [{"name": row[0], "count": row[1]} for row in cursor.fetchall()]
         
-        # Recent events avec vraies localisations
+        # Recent events avec mesures correctives
         cursor.execute("""
             SELECT 
                 e.event_id,
                 COALESCE(e.classification, 'Classification inconnue') as titre,
                 COALESCE(TO_CHAR(e.start_datetime, 'YYYY-MM-DD'), '2024-01-01') as date,
                 COALESCE(ou.location, 'Non spécifié') as lieu,
-                'Mesure corrective' as categorie
+                e.type as categorie,
+                (
+                    SELECT COUNT(*)
+                    FROM event_corrective_measure ecm
+                    WHERE ecm.event_id = e.event_id
+                ) as nb_mesures
             FROM event e
             LEFT JOIN organizational_unit ou ON e.organizational_unit_id = ou.unit_id
             ORDER BY e.start_datetime DESC 
@@ -95,7 +100,8 @@ async def get_metrics(duration: int = 12):
                 "titre": row[1],
                 "date": row[2],
                 "lieu": row[3],
-                "categorie": row[4]
+                "categorie": row[4],
+                "nb_mesures": row[5]
             })
         
         # Events by month avec durée paramétrable - gérer le cas "Tous"

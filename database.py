@@ -138,17 +138,30 @@ def load_events() -> List[Dict]:
         
         query = """
             SELECT 
-                cm.measure_id as id,
-                cm.name as titre,
-                cm.description,
-                TO_CHAR(cm.implementation_date, 'YYYY-MM-DD') as date,
-                cm.cost::text as cout,
-                cm.organizational_unit_id as unite_id,
+                e.event_id as id,
+                e.classification as titre,
+                e.description,
+                TO_CHAR(e.start_datetime, 'YYYY-MM-DD') as date,
+                e.type as categorie,
                 COALESCE(ou.location, 'Non spécifié') as lieu,
-                'Mesure corrective' as categorie
-            FROM corrective_measure cm
-            LEFT JOIN organizational_unit ou ON cm.organizational_unit_id = ou.unit_id
-            ORDER BY cm.measure_id DESC 
+                -- Charger les mesures correctives associées
+                (
+                    SELECT json_agg(
+                        json_build_object(
+                            'measure_id', cm.measure_id,
+                            'name', cm.name,
+                            'description', cm.description,
+                            'implementation_date', TO_CHAR(cm.implementation_date, 'YYYY-MM-DD'),
+                            'cost', cm.cost::text
+                        )
+                    )
+                    FROM event_corrective_measure ecm
+                    JOIN corrective_measure cm ON ecm.measure_id = cm.measure_id
+                    WHERE ecm.event_id = e.event_id
+                ) as mesures_correctives
+            FROM event e
+            LEFT JOIN organizational_unit ou ON e.organizational_unit_id = ou.unit_id
+            ORDER BY e.start_datetime DESC 
             LIMIT 100
         """
         
@@ -161,13 +174,17 @@ def load_events() -> List[Dict]:
             event = dict(row)
             
             if not event.get('titre'):
-                event['titre'] = f"Mesure corrective #{event.get('id', 'N/A')}"
+                event['titre'] = f"Événement #{event.get('id', 'N/A')}"
             if not event.get('description'):
                 event['description'] = 'Description non disponible'
             if not event.get('date'):
                 event['date'] = '2024-01-01'
             
-            event['categorie'] = 'Mesure corrective'
+            # Convertir les mesures correctives de JSON à liste Python
+            if event.get('mesures_correctives'):
+                event['mesures_correctives'] = event['mesures_correctives']
+            else:
+                event['mesures_correctives'] = []
                 
             events.append(event)
         
@@ -182,10 +199,22 @@ def load_events() -> List[Dict]:
 
 def format_event(event: Dict) -> str:
     """Formate un événement pour l'affichage."""
-    return f"""
+    formatted = f"""
 Titre: {event.get('titre', 'N/A')}
 Date: {event.get('date', 'N/A')}
 Lieu: {event.get('lieu', 'N/A')}
 Description: {event.get('description', 'N/A')}
 Catégorie: {event.get('categorie', 'N/A')}
 """
+    
+    # Ajouter les mesures correctives si elles existent
+    mesures = event.get('mesures_correctives', [])
+    if mesures:
+        formatted += "\nMesures correctives associées:\n"
+        for i, mesure in enumerate(mesures, 1):
+            formatted += f"  {i}. {mesure.get('name', 'N/A')}\n"
+            if mesure.get('description'):
+                formatted += f"     {mesure.get('description')[:100]}...\n"
+            formatted += f"     Date: {mesure.get('implementation_date', 'N/A')}, Coût: {mesure.get('cost', 'N/A')}$\n"
+    
+    return formatted
