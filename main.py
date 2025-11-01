@@ -151,7 +151,6 @@ def invoke_embedding_model(text_to_embed: str, model_id: str = TITAN_EMBEDDING_M
 
 if __name__ == "__main__":
     
-    # --- AJOUT CRUCIAL: Chargement des variables d'environnement depuis le fichier .env ---
     load_dotenv()
     
     # 1. Définissez votre prompt ici
