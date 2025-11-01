@@ -5,9 +5,17 @@ from typing import List, Dict
 
 def get_connection():
     """Crée une connexion à la base de données SQLite."""
-    # Créer le chemin complet vers la base de données dans le répertoire du projet
-    db_path = os.path.join(os.path.dirname(__file__), 'events.db')
+    # Utiliser un répertoire db pour Docker ou le répertoire courant
+    if os.path.exists('/app/db'):
+        db_path = '/app/db/events.db'
+    else:
+        db_path = os.path.join(os.path.dirname(__file__), 'events.db')
+    
     print(f"🔍 DEBUG: Chemin de la base de données: {db_path}")
+    
+    # Créer le répertoire si nécessaire
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
