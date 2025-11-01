@@ -162,14 +162,36 @@ header h1 {
     border-radius: 6px;
 }
 
+.event-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.event-link:hover {
+    transform: translateX(5px);
+    box-shadow: var(--shadow);
+    background: #f1f5f9;
+}
+
 .event-item h4 {
     font-size: 1rem;
     margin-bottom: 0.5rem;
+    color: var(--text);
 }
 
 .event-item p {
     font-size: 0.875rem;
     color: var(--text-light);
+    margin: 0.25rem 0;
+}
+
+.measures-count {
+    color: var(--primary);
+    font-weight: 500;
+    margin-top: 0.5rem;
 }
 
 .chat-container {
