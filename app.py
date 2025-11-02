@@ -322,11 +322,15 @@ async def create_event_audio(request: dict):
         logger.info(f"   Type: {request.get('event_type', 'EHS')}")
         logger.info(f"   Classification: {request.get('classification', 'PREVENTIVE_DECLARATION')}")
         
+        # Valeurs par défaut pour les événements créés par transcription audio
+        DEFAULT_EMPLOYEE_ID = 1001  # Numéro d'employé par défaut
+        DEFAULT_ORG_UNIT_ID = 126    # Unité organisationnelle par défaut
+        
         event = create_event(
-            declared_by_id=request.get('declared_by_id', 1),
+            declared_by_id=request.get('declared_by_id', DEFAULT_EMPLOYEE_ID),
             description=description,
             start_datetime=datetime.now(),
-            organizational_unit_id=request.get('organizational_unit_id', 1),
+            organizational_unit_id=request.get('organizational_unit_id', DEFAULT_ORG_UNIT_ID),
             event_type=request.get('event_type', 'EHS'),
             classification=request.get('classification', 'PREVENTIVE_DECLARATION')
         )

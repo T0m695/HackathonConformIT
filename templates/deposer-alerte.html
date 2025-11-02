@@ -126,7 +126,10 @@
                 <div class="form-group">
                     <label for="unitId">Unité organisationnelle</label>
                     <select id="unitId">
-                        <option value="1">Unité 1</option>
+                        <option value="126" selected>Injection Molding Line A</option>
+                        <option value="127">Injection Molding Line B</option>
+                        <option value="128">Injection Molding Line C</option>
+                        <option value="129">Injection Molding Line D</option>
                     </select>
                 </div>
 
@@ -285,7 +288,7 @@
             submitButton.textContent = '⏳ Création en cours...';
             
             const eventData = {
-                declared_by_id: 1,
+                declared_by_id: 1001,  // Employé par défaut pour transcription audio
                 organizational_unit_id: parseInt(document.getElementById('unitId').value),
                 event_type: document.getElementById('eventType').value,
                 classification: document.getElementById('classification').value,
