@@ -4,7 +4,7 @@ import re
 from typing import Dict, Optional, Tuple
 from datetime import datetime, timedelta
 import os
-from config import Config, logger
+from .config import Config, debug_print
 
 try:
     import redis
@@ -27,9 +27,9 @@ class CacheManager:
                     decode_responses=True
                 )
                 self.redis_client.ping()
-                logger.info("Redis cache connected")
-            except Exception as e:
-                logger.warning(f"Redis unavailable, using memory cache: {e}")
+                debug_print("✅ Redis cache connected")
+            except redis.ConnectionError as e:
+                debug_print(f"⚠️ Redis unavailable, using memory cache: {e}")
     
     def _normalize_question(self, question: str) -> str:
         """Normalize question for better cache hits"""
@@ -53,21 +53,21 @@ class CacheManager:
             try:
                 value = self.redis_client.get(f"sql_cache:{key}")
                 if value:
-                    logger.info(f"Cache HIT (Redis): {question[:50]}...")
+                    debug_print(f"💾 Cache HIT (Redis): {question[:50]}...")
                     return value
             except Exception as e:
-                logger.error(f"Redis get error: {e}")
+                debug_print(f"❌ Redis get error: {e}")
         
         # Fallback to memory cache
         if key in self.memory_cache:
             value, timestamp = self.memory_cache[key]
             if datetime.now() - timestamp < timedelta(seconds=Config.CACHE_TTL):
-                logger.info(f"Cache HIT (Memory): {question[:50]}...")
+                debug_print(f"💾 Cache HIT (Memory): {question[:50]}...")
                 return value
             else:
                 del self.memory_cache[key]
         
-        logger.info(f"Cache MISS: {question[:50]}...")
+        debug_print(f"🔍 Cache MISS: {question[:50]}...")
         return None
     
     def set(self, question: str, result: str):
@@ -83,7 +83,7 @@ class CacheManager:
                     result
                 )
             except Exception as e:
-                logger.error(f"Redis set error: {e}")
+                debug_print(f"❌ Redis set error: {e}")
         
         # Store in memory cache
         self.memory_cache[key] = (result, datetime.now())
@@ -95,6 +95,6 @@ class CacheManager:
             try:
                 for key in self.redis_client.scan_iter("sql_cache:*"):
                     self.redis_client.delete(key)
-                logger.info("Redis cache cleared")
+                debug_print("🧹 Redis cache cleared")
             except Exception as e:
-                logger.error(f"Redis clear error: {e}")
+                debug_print(f"❌ Redis clear error: {e}")

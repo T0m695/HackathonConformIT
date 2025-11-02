@@ -8,16 +8,30 @@ import numpy as np
 import faiss
 
 from typing import List, Dict, Tuple, Optional
-from config import Config, logger
-from bedrock_utils import invoke_embedding, invoke_embeddings_batch
+from .config import Config, debug_print
+from .bedrock_utils import invoke_embedding, invoke_embeddings_batch
 
 class FAISSTextIndexer:
-    """Gère les index FAISS pour les champs TEXT de la base de données (VERSION OPTIMISÉE)"""
-    
-    def __init__(self, index_base_dir: str = "faiss_text_indexes"):
+    """Gère les index FAISS pour les champs TEXT de la base de données (VERSION OPTIMISÉE)
+
+    Par défaut, cherche les index pré-calculés dans le dossier `faiss_text_indexes`
+    situé dans le même répertoire que ce module (ATTEMPT1/faiss_text_indexes). Cela
+    évite les problèmes de chemins relatifs quand l'application est exécutée
+    depuis /app dans Docker.
+    """
+
+    def __init__(self, index_base_dir: Optional[str] = None):
+        # Par défaut, utilisez le dossier faiss_text_indexes situé à côté de ce fichier
+        module_dir = os.path.dirname(__file__)
+        if index_base_dir is None:
+            index_base_dir = os.path.join(module_dir, "faiss_text_indexes")
+        # If a relative path was provided, interpret it relative to module_dir
+        if not os.path.isabs(index_base_dir):
+            index_base_dir = os.path.join(module_dir, index_base_dir)
+
         self.index_base_dir = index_base_dir
         self.indexes: Dict[str, Dict] = {}
-        os.makedirs(index_base_dir, exist_ok=True)
+        os.makedirs(self.index_base_dir, exist_ok=True)
         self._load_indexes()
     
     def _get_db_connection(self):
@@ -73,9 +87,9 @@ class FAISSTextIndexer:
                                 'table': table,
                                 'column': column
                             }
-                            logger.info(f"Loaded FAISS index: {key} ({index.ntotal} vectors)")
+                            debug_print(f"✅ Loaded FAISS index: {key} ({index.ntotal} vectors)")
                     except Exception as e:
-                        logger.error(f"Failed to load index {base_name}: {e}")
+                        debug_print(f"❌ Failed to load index {base_name}: {e}")
     
     def build_index_for_column(
         self, 
@@ -136,7 +150,7 @@ class FAISSTextIndexer:
                     emb = batch_embeddings[i]
                     
                     if emb is None:
-                        logger.warning(f"Skipping text at index {batch_start + i} due to embedding failure")
+                        debug_print(f"⚠️ Skipping text at index {batch_start + i} due to embedding failure")
                         continue
                     
                     # Normaliser
@@ -175,7 +189,7 @@ class FAISSTextIndexer:
                 }
                 
                 print(f"   ✅ Index créé : {len(all_embeddings)} vecteurs indexés")
-                logger.info(f"FAISS index built for {table}.{column}: {len(all_embeddings)} vectors")
+                debug_print(f"✅ FAISS index built for {table}.{column}: {len(all_embeddings)} vectors")
             else:
                 print(f"   ❌ Aucun embedding généré")
         

@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
+RUN pip install --upgrade pip
+
 # Copier et installer les dépendances
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -28,6 +30,12 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # Variables d'environnement par défaut
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
+
+# Copier le fichier .env
+COPY ATTEMPT1/.env /app/ATTEMPT1/
+
+# Charger les variables d'environnement AWS
+RUN set -a && . /app/ATTEMPT1/.env && set +a
 
 # Commande par défaut
 CMD ["python", "app.py"]

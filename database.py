@@ -1,17 +1,27 @@
 import psycopg2
 import psycopg2.extras
 import os
-from typing import List, Dict
+from typing import List, Dict, Optional
+import redis
+import json
+
+# Add Redis connection at the top
+redis_client = redis.Redis(
+    host=os.getenv('REDIS_HOST', 'localhost'),
+    port=int(os.getenv('REDIS_PORT', 6379)),
+    decode_responses=True
+)
+
+CACHE_TTL = 300  # 5 minutes
 
 def get_connection():
     """Crée une connexion à la base de données PostgreSQL."""
     try:
-        # Utiliser host.docker.internal si on est dans Docker, sinon localhost
         db_host = os.getenv("DB_HOST", "localhost")
         db_port = os.getenv("DB_PORT", "5432")
         db_name = os.getenv("DB_NAME", "hackathon")
         db_user = os.getenv("DB_USER", "postgres")
-        db_password = os.getenv("DB_PASSWORD", "admin")
+        db_password = os.getenv("DB_PASSWORD", "yourpass")
         
         print(f"🔍 DEBUG: Tentative de connexion à PostgreSQL...")
         print(f"🔍 DEBUG: Host={db_host}, Database={db_name}, User={db_user}, Port={db_port}")
@@ -136,8 +146,31 @@ def init_database():
         import traceback
         traceback.print_exc()
 
+def get_cached_events() -> Optional[List[Dict]]:
+    """Get events from Redis cache"""
+    try:
+        cached = redis_client.get('events_cache')
+        if cached:
+            return json.loads(cached)
+    except:
+        return None
+    return None
+
+def set_cached_events(events: List[Dict]):
+    """Store events in Redis cache"""
+    try:
+        redis_client.setex('events_cache', CACHE_TTL, json.dumps(events))
+    except:
+        pass
+
 def load_events() -> List[Dict]:
-    """Charge tous les événements depuis PostgreSQL."""
+    """Load events with caching"""
+    # Try cache first
+    cached = get_cached_events()
+    if cached:
+        print("✅ Loaded events from cache")
+        return cached
+
     try:
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -195,6 +228,9 @@ def load_events() -> List[Dict]:
                 event['mesures_correctives'] = []
                 
             events.append(event)
+        
+        # Cache the results
+        set_cached_events(events)
         
         cursor.close()
         conn.close()

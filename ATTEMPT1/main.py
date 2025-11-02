@@ -6,18 +6,18 @@
 Enhanced RAG Text-to-SQL for EHS PostgreSQL DB v2 - FAISS Edition
 """
 
-from config import Config, logger
-from pipeline import EnhancedRAGPipeline
+from .config import Config, debug_print
+from .pipeline import EnhancedRAGPipeline
 
 def main():
     """Interactive CLI"""
-    logger.info("Initializing Enhanced RAG Pipeline with FAISS...")
+    debug_print("🚀 Initializing Enhanced RAG Pipeline with FAISS...")
     
     try:
         pipeline = EnhancedRAGPipeline()
-        logger.info("Pipeline ready!")
+        debug_print("✅ Pipeline ready!")
     except Exception as e:
-        logger.error(f"Failed to initialize pipeline: {e}")
+        debug_print(f"❌ Failed to initialize pipeline: {e}")
         return
     
     print("\n" + "="*80)
@@ -164,7 +164,7 @@ def main():
             break
         except Exception as e:
             query_count["failed"] += 1
-            logger.error(f"Unexpected error: {e}", exc_info=True)
+            debug_print(f"❌ Unexpected error: {e}")
             print(f"\n❌ Erreur inattendue: {e}")
 
 if __name__ == "__main__":

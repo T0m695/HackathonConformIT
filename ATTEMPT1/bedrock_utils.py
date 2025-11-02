@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from langchain_core.embeddings import Embeddings
 
-from config import Config, logger
+from .config import Config, debug_print
 
 def _get_bedrock_client():
     region = os.getenv("AWS_DEFAULT_REGION", "us-east-1")
@@ -42,7 +42,7 @@ def invoke_llm(prompt: str, model_id: str = Config.CLAUDE_MODEL) -> str:
         out = json.loads(resp["body"].read())
         return out["content"][0]["text"]
     except Exception as e:
-        logger.error(f"LLM invocation failed: {e}")
+        debug_print(f"❌ LLM invocation failed: {e}")
         return f"LLM error: {e}"
 
 def invoke_embedding(text: str, model_id: str = Config.TITAN_EMBED_MODEL) -> List[float]:
@@ -136,16 +136,16 @@ def invoke_embeddings_batch(
                 results[idx] = embedding
             else:
                 errors.append((idx, error))
-                logger.error(f"Failed to generate embedding for text {idx}: {error}")
+                debug_print(f"❌ Failed to generate embedding for text {idx}: {error}")
             
             # Progress
             if completed % 10 == 0 or completed == total:
-                logger.info(f"Progress: {completed}/{total} embeddings generated")
+                debug_print(f"📊 Progress: {completed}/{total} embeddings generated")
     
     # Vérifier les résultats
     failed_count = sum(1 for r in results if r is None)
     if failed_count > 0:
-        logger.warning(f"{failed_count}/{total} embeddings failed to generate")
+        debug_print(f"⚠️ {failed_count}/{total} embeddings failed to generate")
     
     return results
 

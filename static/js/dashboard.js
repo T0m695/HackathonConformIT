@@ -176,7 +176,13 @@ async function sendMessage() {
         });
         
         const data = await response.json();
+        // First show the main bot response (SQL string)
         addMessage(data.response, 'bot');
+
+        // If metadata contains DB result preview or full result, show it in a collapsible block
+        if (data.metadata) {
+            renderBotMetadata(data.metadata);
+        }
         
     } catch (error) {
         addMessage('❌ Erreur de connexion. Veuillez réessayer.', 'bot');
@@ -200,6 +206,81 @@ function addMessage(text, type) {
     chatMessages.appendChild(messageDiv);
     
     // Scroll to bottom
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function renderBotMetadata(metadata) {
+    const chatMessages = document.getElementById('chatMessages');
+
+    const metaDiv = document.createElement('div');
+    metaDiv.className = 'message bot-meta-message';
+
+    const metaContent = document.createElement('div');
+    metaContent.className = 'message-content meta-content';
+
+    // SQL preview (some clients may already show SQL as main response)
+    if (metadata.sql) {
+        const sqlBlock = document.createElement('pre');
+        sqlBlock.className = 'sql-block';
+        sqlBlock.textContent = metadata.sql;
+        metaContent.appendChild(document.createTextNode('SQL généré:'));
+        metaContent.appendChild(sqlBlock);
+    }
+
+    // DB result preview
+    if (metadata.db_result_preview) {
+        const previewTitle = document.createElement('div');
+        previewTitle.className = 'meta-title';
+        previewTitle.textContent = 'DB result preview:';
+        metaContent.appendChild(previewTitle);
+
+        const previewPre = document.createElement('pre');
+        previewPre.className = 'db-preview';
+        previewPre.textContent = metadata.db_result_preview;
+        metaContent.appendChild(previewPre);
+
+        // Toggle for full result
+        const toggleBtn = document.createElement('button');
+        toggleBtn.className = 'btn btn-small toggle-result-btn';
+        toggleBtn.textContent = 'Afficher le résultat complet';
+
+        const fullPre = document.createElement('pre');
+        fullPre.className = 'db-full-result';
+        fullPre.style.display = 'none';
+        try {
+            fullPre.textContent = JSON.stringify(metadata.db_result, null, 2);
+        } catch (e) {
+            fullPre.textContent = String(metadata.db_result);
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            if (fullPre.style.display === 'none') {
+                fullPre.style.display = 'block';
+                toggleBtn.textContent = 'Cacher le résultat complet';
+            } else {
+                fullPre.style.display = 'none';
+                toggleBtn.textContent = 'Afficher le résultat complet';
+            }
+            // Scroll to bottom when toggling
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+
+        metaContent.appendChild(toggleBtn);
+        metaContent.appendChild(fullPre);
+    }
+
+    // Execution time / cache info
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'meta-info';
+    const execTime = metadata.execution_time ? `Execution: ${metadata.execution_time}s` : '';
+    const fromCache = metadata.from_cache ? 'From cache' : '';
+    if (execTime || fromCache) {
+        infoDiv.textContent = [execTime, fromCache].filter(Boolean).join(' • ');
+        metaContent.appendChild(infoDiv);
+    }
+
+    metaDiv.appendChild(metaContent);
+    chatMessages.appendChild(metaDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 

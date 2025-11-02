@@ -6,12 +6,12 @@ import psycopg2
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional
 
-from config import Config, logger
-from cache import CacheManager
-from vector_store import VectorStoreManager
-from sql_generator import SQLGenerator
-from bedrock_utils import invoke_embedding
-from faiss_text_indexer import FAISSTextIndexer
+from .config import Config, debug_print
+from .cache import CacheManager
+from .vector_store import VectorStoreManager
+from .sql_generator import SQLGenerator
+from .bedrock_utils import invoke_embedding
+from .faiss_text_indexer import FAISSTextIndexer
 
 class EnhancedRAGPipeline:
     """Enhanced RAG pipeline with integrated FAISS text search."""
@@ -21,7 +21,6 @@ class EnhancedRAGPipeline:
         self.vector_manager = VectorStoreManager(schema_path)
         self.sql_generator = SQLGenerator(Config.DB_URI)
         self.text_indexer = FAISSTextIndexer()
-        logger.info("RAG Pipeline initialized with integrated FAISS text search")
     
     def _detect_text_search_need(self, question: str) -> Optional[Tuple[str, str]]:
         """
@@ -73,7 +72,6 @@ class EnhancedRAGPipeline:
             return "\n".join(context_parts)
         
         except Exception as e:
-            logger.warning(f"Text search failed: {e}")
             return ""
     
     def ask(self, question: str) -> Dict:
@@ -144,7 +142,7 @@ class EnhancedRAGPipeline:
             }
         
         except Exception as e:
-            logger.error(f"Query failed: {e}", exc_info=True)
+            debug_print(f"❌ Query failed: {str(e)}")
             execution_time = (datetime.now() - start_time).total_seconds()
             
             return {
@@ -222,7 +220,7 @@ class EnhancedRAGPipeline:
             }
         
         except Exception as e:
-            logger.error(f"FAISS search failed: {e}", exc_info=True)
+            debug_print(f"❌ FAISS search failed: {str(e)}")
             execution_time = (datetime.now() - start_time).total_seconds()
             
             return {

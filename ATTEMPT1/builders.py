@@ -4,13 +4,25 @@ from typing import List, Dict
 
 from langchain_core.documents import Document
 
-from config import logger
+from .config import debug_print
 
 class SchemaDocumentBuilder:
     """Builds rich documents from schema with synonyms and descriptions"""
     
-    @staticmethod
-    def build_documents(schema: Dict) -> List[Document]:
+    def __init__(self, schema_path: str = None):
+        self.schema_path = schema_path if schema_path else "schema.json"
+        
+    def build(self) -> List[Document]:
+        """Build documents from schema"""
+        try:
+            with open(self.schema_path, 'r', encoding='utf-8') as f:
+                schema = json.load(f)
+            return self.build_documents(schema)
+        except Exception as e:
+            debug_print(f"❌ Erreur lors du chargement du schéma: {e}")
+            raise
+            
+    def build_documents(self, schema: Dict) -> List[Document]:
         docs = []
         texts_elements = []
         # 1. Table documents with enriched metadata
@@ -104,5 +116,5 @@ Requête SQL correspondante:
                 }
             ))
         
-        logger.info(f"Built {len(docs)} documents from schema")
+        debug_print(f"✅ Built {len(docs)} documents from schema")
         return docs

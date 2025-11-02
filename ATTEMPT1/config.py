@@ -1,9 +1,13 @@
 # config.py
 import os
-import logging
 from dotenv import load_dotenv
 
 load_dotenv()
+
+def debug_print(msg: str):
+    """Print debug messages with a timestamp"""
+    from datetime import datetime
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}")
 
 class Config:
     # Models
@@ -11,7 +15,7 @@ class Config:
     CLAUDE_MODEL = "anthropic.claude-3-haiku-20240307-v1:0"
     
     # Database
-    DB_URI = f"postgresql+psycopg2://postgres:{os.getenv('POSTGRES_PASSWORD','yourpass')}@localhost:5432/events_db"
+    DB_URI = f"postgresql+psycopg2://{os.getenv('DB_USER', 'postgres')}:{os.getenv('DB_PASSWORD', 'yourpass')}@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/{os.getenv('DB_NAME', 'hackathon')}"
     
     # Vector Store
     INDEX_DIR = "faiss_index"
@@ -27,7 +31,7 @@ class Config:
     
     # Vector
     VECTOR_DIM = 1536  # Titan Embeddings v1
-    SCHEMA_PATH = "schema.json"
+    SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "schema.json")
     
     # ============================================
     # PARAMÈTRES D'OPTIMISATION BATCH EMBEDDINGS
@@ -84,9 +88,4 @@ class Config:
         else:
             raise ValueError(f"Profil inconnu: {profile}. Utilisez 'fast', 'balanced', ou 'safe'")
 
-# Logging Setup
-logging.basicConfig(
-    level=logging.INFO,  # Changed back to INFO for better visibility
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Instead of logging, we use debug_print for messages

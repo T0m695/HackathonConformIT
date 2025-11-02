@@ -2,7 +2,7 @@
 import re
 from typing import Tuple, Optional
 
-from config import Config
+from .config import Config
 
 class SQLValidator:
     """Validates and sanitizes SQL queries"""

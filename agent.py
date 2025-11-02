@@ -1,43 +1,93 @@
-import os
+"""
+Enhanced Event Agent using ATTEMPT1's RAG Pipeline and SQL Generation capabilities.
+"""
+from typing import Dict, List, Optional, Tuple
 import json
-from typing import List, Dict, Optional
-import boto3
-from botocore.exceptions import ClientError, NoCredentialsError
-from data_loader import load_events, format_event
+from ATTEMPT1.pipeline import EnhancedRAGPipeline
+from ATTEMPT1.config import Config, debug_print
 
 class EventAgent:
-    """Agent IA pour recommander des événements."""
+    """Agent IA avancé pour interroger et analyser les événements de sécurité."""
     
     def __init__(self):
-        """Initialise l'agent avec AWS Bedrock."""
-        self.aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
-        self.aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-        self.aws_session_token = os.getenv("AWS_SESSION_TOKEN")
-        self.aws_region = os.getenv("AWS_DEFAULT_REGION", "us-east-1")
-        
-        if not self.aws_access_key or not self.aws_secret_key:
-            raise ValueError("❌ AWS_ACCESS_KEY_ID et AWS_SECRET_ACCESS_KEY sont requises")
-        
-        # Initialise le client Bedrock avec gestion d'erreurs
+        """Initialise l'agent avec le pipeline RAG amélioré."""
         try:
-            session_config = {
-                'service_name': 'bedrock-runtime',
-                'region_name': self.aws_region,
-                'aws_access_key_id': self.aws_access_key,
-                'aws_secret_access_key': self.aws_secret_key,
-            }
+            # Initialize the enhanced RAG pipeline
+            self.pipeline = EnhancedRAGPipeline()
+            debug_print("✅ Pipeline RAG avancé initialisé avec succès")
             
-            # Ajouter le token de session seulement s'il existe
-            if self.aws_session_token:
-                session_config['aws_session_token'] = self.aws_session_token
-                
-            self.bedrock = boto3.client(**session_config)
+            # Configure performance profile
+            Config.EMBEDDING_BATCH_SIZE = 32  # Optimisé pour les requêtes en temps réel
+            Config.EMBEDDING_MAX_WORKERS = 4  # Utilise le multithreading pour de meilleures performances
+            debug_print(f"⚡ Optimisations batch activées (batch_size={Config.EMBEDDING_BATCH_SIZE}, workers={Config.EMBEDDING_MAX_WORKERS})")
             
         except Exception as e:
-            raise ValueError(f"❌ Impossible d'initialiser le client AWS Bedrock: {str(e)}")
+            raise ValueError(f"❌ Erreur lors de l'initialisation du pipeline RAG: {str(e)}")
+            
+    def process_query(self, question: str) -> Tuple[str, Dict]:
+        """
+        Traite une question en langage naturel et retourne une réponse structurée.
         
-        # Charge les événements depuis la base de données
-        print("🔍 DEBUG: Chargement des événements...")
+        Args:
+            question: La question en langage naturel
+            
+        Returns:
+            Tuple[str, Dict]: (réponse formatée, métadonnées supplémentaires)
+        """
+        try:
+            # Process the query through the RAG pipeline
+            answer = self.pipeline.ask(question)
+            
+            # Format the response
+            response = {
+                "answer": answer.get("answer", ""),
+                "sql": answer.get("sql", ""),
+                "context": answer.get("context", []),
+                "confidence": answer.get("confidence", 0.0)
+            }
+            
+            # Extract metadata
+            metadata = {
+                "sql_query": answer.get("sql", ""),
+                "context_used": bool(answer.get("context")),
+                "confidence_score": answer.get("confidence", 0.0),
+                "processing_time": answer.get("processing_time", 0.0)
+            }
+            
+            # Format human readable response
+            human_response = response["answer"]
+            if not human_response:
+                human_response = "Je n'ai pas trouvé de réponse précise à votre question. Pourriez-vous la reformuler?"
+                
+            return human_response, metadata
+            
+        except Exception as e:
+            debug_print(f"❌ Erreur lors du traitement de la requête: {str(e)}")
+            raise ValueError(f"Erreur lors du traitement de la requête: {str(e)}")
+            
+    def search_events(self, query: str) -> Dict:
+        """
+        Point d'entrée principal pour la recherche d'événements.
+        Compatible avec l'interface existante de l'application.
+        
+        Args:
+            query: La requête en langage naturel
+            
+        Returns:
+            Dict: La réponse formatée avec les métadonnées
+        """
+        try:
+            response, metadata = self.process_query(query)
+            return {
+                "response": response,
+                "metadata": metadata
+            }
+        except Exception as e:
+            debug_print(f"❌ Erreur lors de la recherche: {str(e)}")
+            return {
+                "response": f"Une erreur s'est produite: {str(e)}",
+                "metadata": {"error": str(e)}
+            }
         self.events = load_events()
         print(f"🔍 DEBUG: Événements chargés: {len(self.events)}")
         
@@ -48,99 +98,70 @@ class EventAgent:
             
         self.model_id = "anthropic.claude-3-haiku-20240307-v1:0"
     
-    def test_bedrock_connection(self) -> bool:
-        """Test la connexion à AWS Bedrock."""
+    def _format_response(self, response: Dict) -> Dict:
+        """Format la réponse du pipeline pour l'interface web."""
+        if not response:
+            return {
+                "response": "❌ Le pipeline RAG n'a pas retourné de réponse",
+                "metadata": {"error": "no_response"}
+            }
+            
+        # Format the response
+        answer = response.get("answer", "")
+        if not answer:
+            answer = "Je n'ai pas trouvé de réponse précise à cette question. Pourriez-vous la reformuler?"
+            
+        # Add emojis based on response type
+        if "error" in response:
+            answer = f"❌ {answer}"
+        elif response.get("confidence", 0) > 0.8:
+            answer = f"✅ {answer}"
+        else:
+            answer = f"ℹ️ {answer}"
+            
         try:
-            # Test simple avec un prompt minimal
-            response = self.bedrock.invoke_model(
-                modelId=self.model_id,
-                body=json.dumps({
-                    "anthropic_version": "bedrock-2023-05-31",
-                    "max_tokens": 10,
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": "Dis juste 'OK'"
-                        }
-                    ],
-                    "temperature": 0.1
-                })
-            )
-            
-            response_body = json.loads(response['body'].read())
-            return True
-            
-        except ClientError as e:
-            error_code = e.response.get('Error', {}).get('Code', 'Unknown')
-            if error_code == 'UnrecognizedClientException':
-                print("🔑 Token de sécurité invalide ou expiré")
-            elif error_code == 'AccessDeniedException':
-                print("🚫 Accès refusé à Bedrock - vérifiez vos permissions")
-            else:
-                print(f"⚠️  Erreur AWS: {error_code}")
-            return False
-        except NoCredentialsError:
-            print("🔑 Credentials AWS manquants")
-            return False
+            return {
+                "response": answer,
+                "metadata": {
+                    "sql_query": response.get("sql", ""),
+                    "context": response.get("context", []),
+                    "confidence": response.get("confidence", 0.0),
+                    "processing_time": response.get("processing_time", 0.0),
+                    "search_strategy": response.get("search_strategy", "semantic")
+                }
+            }
         except Exception as e:
-            print(f"❌ Erreur de connexion: {str(e)}")
-            return False
-    
-    def create_context(self) -> str:
-        """Crée le contexte avec tous les événements et leurs mesures correctives."""
-        context = "Liste des événements de sécurité disponibles:\n\n"
-        for i, event in enumerate(self.events, 1):
-            context += f"Événement {i}:{format_event(event)}\n"
-        return context
-    
-    def search_events(self, user_query: str) -> str:
-        """Recherche des événements basés sur la requête utilisateur."""
-        if not self.events:
-            return "❌ Aucun événement disponible dans la base de données."
-        
-        context = self.create_context()
-        
-        system_prompt = """Tu es un assistant intelligent spécialisé dans la sécurité industrielle chez TechnoPlast.
-Tu aides les utilisateurs à trouver des événements de sécurité et les mesures correctives associées.
-Les événements incluent des incidents, des accidents, des quasi-accidents, et des mesures préventives.
-Chaque événement peut avoir plusieurs mesures correctives associées.
-Base tes recommandations uniquement sur les événements fournis dans le contexte.
-Réponds de manière claire et concise en français avec des emojis appropriés."""
+            raise ValueError(f"❌ Erreur de formatage de la réponse: {e}")
+            
+    def _extract_insights(self, results: Dict) -> Dict:
+        """Extrait les insights clés des résultats."""
+        insights = {
+            "key_findings": [],
+            "metrics": {},
+            "recommendations": []
+        }
         
         try:
-            message = f"{context}\n\nQuestion: {user_query}"
-            
-            response = self.bedrock.invoke_model(
-                modelId=self.model_id,
-                body=json.dumps({
-                    "anthropic_version": "bedrock-2023-05-31",
-                    "max_tokens": 500,
-                    "system": system_prompt,
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": message
-                        }
-                    ],
-                    "temperature": 0.7
-                })
-            )
-            
-            response_body = json.loads(response['body'].read())
-            return response_body['content'][0]['text']
-            
-        except ClientError as e:
-            error_code = e.response.get('Error', {}).get('Code', 'Unknown')
-            if error_code == 'UnrecognizedClientException':
-                return "🔑 ❌ Token de sécurité expiré. Veuillez renouveler vos credentials AWS avec 'aws sts get-session-token'"
-            elif error_code == 'AccessDeniedException':
-                return "🚫 ❌ Accès refusé à Bedrock. Vérifiez vos permissions IAM."
-            elif error_code == 'ValidationException':
-                return "⚠️ ❌ Erreur de validation du modèle. Le modèle Claude 3 Haiku est-il disponible dans votre région?"
-            else:
-                return f"⚠️ ❌ Erreur AWS ({error_code}): {str(e)}"
+            if "context" in results:
+                # Analyze events in context
+                event_count = len(results["context"])
+                severity_levels = {}
+                for event in results["context"]:
+                    severity = event.get("severity", "unknown")
+                    severity_levels[severity] = severity_levels.get(severity, 0) + 1
+                
+                insights["metrics"] = {
+                    "total_events": event_count,
+                    "severity_distribution": severity_levels
+                }
+                
+            if "recommendations" in results:
+                insights["recommendations"] = results["recommendations"]
+                
         except Exception as e:
-            return f"❌ Erreur lors de la recherche: {str(e)}"
+            debug_print(f"⚠️ Erreur lors de l'extraction des insights: {e}")
+            
+        return insights
     
     def get_all_categories(self) -> List[str]:
         """Retourne toutes les catégories d'événements."""

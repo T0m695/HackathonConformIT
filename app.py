@@ -5,20 +5,20 @@ from pydantic import BaseModel
 import uvicorn
 import psycopg2
 import psycopg2.extras
-from agent import EventAgent
-from database import get_connection, init_database
-from typing import Dict, List
+from typing import Dict, List, Optional
 import os
 from datetime import datetime
+from agent import EventAgent
+from database import get_connection
 
-app = FastAPI(title="TechnoPlast Safety Dashboard")
+app = FastAPI(title="TechnoPlast Safety Dashboard - RAG Enhanced")
 
-# Initialize agent
+# Initialize agent with enhanced RAG capabilities
 try:
     agent = EventAgent()
-    print("✅ Agent IA initialisé avec succès")
+    print("✅ Agent IA avancé initialisé avec succès (RAG Pipeline + FAISS)")
 except Exception as e:
-    print(f"⚠️ Erreur initialisation agent: {e}")
+    print(f"⚠️ Erreur initialisation agent RAG: {e}")
     agent = None
 
 # Mount static files
@@ -26,10 +26,12 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 class ChatRequest(BaseModel):
     message: str
+    context: Optional[Dict] = None
 
 class ChatResponse(BaseModel):
     response: str
     timestamp: str
+    metadata: Dict = {}
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
@@ -39,15 +41,92 @@ async def root():
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    """Handle chat requests from the frontend."""
+    """Process chat requests using the enhanced RAG pipeline."""
     if not agent:
-        raise HTTPException(status_code=503, detail="Agent IA non disponible")
+        raise HTTPException(status_code=503, detail="Agent IA avancé non disponible")
     
     try:
-        response = agent.search_events(request.message)
+        # Use the pipeline directly to get the model output including generated SQL
+        pipeline_result = None
+        try:
+            pipeline_result = agent.pipeline.ask(request.message)
+        except Exception:
+            # Fallback to agent.process_query for backward compatibility
+            human_resp, metadata = agent.process_query(request.message)
+            return {
+                "response": human_resp,
+                "timestamp": datetime.now().isoformat(),
+                "metadata": metadata
+            }
+
+        # Expected shape from EnhancedRAGPipeline.ask:
+        # {"success": True, "question": ..., "sql": <sql string>, "result": <db result>, ...}
+        if isinstance(pipeline_result, dict):
+            sql_text = pipeline_result.get("sql") or pipeline_result.get("query") or ""
+            # If sql is empty, try to extract from nested fields
+            if not sql_text and "result" in pipeline_result and isinstance(pipeline_result["result"], dict):
+                sql_text = pipeline_result["result"].get("sql", "")
+
+            # Serialize DB result into JSON-friendly structure when possible
+            db_result = pipeline_result.get("result", None)
+            db_result_serializable = None
+            db_result_preview = ""
+            try:
+                # Common case: list of tuples
+                if isinstance(db_result, list):
+                    # If rows are tuples -> convert to list
+                    if db_result and isinstance(db_result[0], tuple):
+                        db_result_serializable = [list(r) for r in db_result]
+                    else:
+                        db_result_serializable = db_result
+                    db_result_preview = str(db_result_serializable)[:500]
+                else:
+                    db_result_serializable = db_result
+                    db_result_preview = str(db_result)[:500]
+            except Exception:
+                db_result_serializable = str(db_result)
+                db_result_preview = str(db_result)[:500]
+
+            metadata = {
+                "execution_time": pipeline_result.get("execution_time", pipeline_result.get("execution_time_seconds", 0)),
+                "from_cache": pipeline_result.get("from_cache", False),
+                "used_text_search": pipeline_result.get("used_text_search", False),
+                "db_result_preview": db_result_preview,
+                "db_result": db_result_serializable
+            }
+
+            return {
+                "response": sql_text if sql_text else "",
+                "timestamp": datetime.now().isoformat(),
+                "metadata": metadata
+            }
+        else:
+            # Unknown shape: return stringified result
+            return {
+                "response": str(pipeline_result),
+                "timestamp": datetime.now().isoformat(),
+                "metadata": {}
+            }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors du traitement de la requête: {str(e)}"
+        )
+        
+        # Handle enhanced RAG pipeline responses
+        if isinstance(response, dict):
+            metadata = {
+                "execution_time": response.get("execution_time", 0),
+                "from_cache": response.get("from_cache", False),
+                "used_text_search": response.get("used_text_search", False)
+            }
+            response = response.get("result", "❌ Erreur: Réponse invalide")
+            
         return ChatResponse(
             response=response,
-            timestamp=datetime.now().isoformat()
+            timestamp=datetime.now().isoformat(),
+            metadata=metadata
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
