@@ -3,10 +3,16 @@ FROM python:3.11-slim
 # Définir le répertoire de travail
 WORKDIR /app
 
-# Installer les dépendances système pour PostgreSQL
+# Installer les dépendances système
 RUN apt-get update && apt-get install -y \
     postgresql-client \
+    build-essential \
+    libpq-dev \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --upgrade pip
+
 
 # Copier et installer les dépendances
 COPY requirements.txt .
