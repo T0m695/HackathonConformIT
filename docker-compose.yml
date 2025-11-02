@@ -31,9 +31,9 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - db-data-17:/var/lib/postgresql/data
+      - db-data-pg17-fresh:/var/lib/postgresql/data
       - ./docker/postgres/initdb.sh:/docker-entrypoint-initdb.d/01-restore.sh:ro
-      - ./sql/events.backup:/docker-entrypoint-initdb.d/events.backup:ro
+      - ./sql/events-bis.backup:/docker-entrypoint-initdb.d/events.backup:ro
     ports:
       - "${DB_PORT}:5432"
     healthcheck:
@@ -44,4 +44,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  db-data-17:
+  db-data-pg17-fresh:
