@@ -12,6 +12,7 @@ from ATTEMPT1.vector_store import VectorStoreManager
 from ATTEMPT1.sql_generator import SQLGenerator
 from ATTEMPT1.bedrock_utils import invoke_embedding
 from ATTEMPT1.faiss_text_indexer import FAISSTextIndexer
+import re
 
 class EnhancedRAGPipeline:
     """Enhanced RAG pipeline with integrated FAISS text search."""
@@ -107,8 +108,12 @@ class EnhancedRAGPipeline:
                 }
             
             # 1. Retrieve schema context (always)
+
+
+            question = re.sub(r'\bincidents?\b', 'problème', question, flags=re.IGNORECASE)
             schema_context = self.vector_manager.retrieve_context(question)
-            
+            schema_context = re.sub(r'"description":\s*".*?"(,)?', '', schema_context)
+
             # 2. Check if text search is needed
             text_search_target = self._detect_text_search_need(question)
             text_search_context = ""
