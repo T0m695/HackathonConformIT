@@ -5,7 +5,6 @@ from pydantic import BaseModel
 import uvicorn
 import psycopg2
 import psycopg2.extras
-from agent import EventAgent
 from visualization_agent import VisualizationAgent
 import json
 from database import get_connection, init_database
