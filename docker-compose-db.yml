@@ -1,0 +1,11 @@
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=hackathon
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=admin
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/events.sql:/docker-entrypoint-initdb.d/events.sql
+    restart: unless-stopped
