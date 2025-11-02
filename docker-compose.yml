@@ -6,7 +6,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DB_HOST=host.docker.internal
+      - DB_HOST=db
       - DB_PORT=5432
       - DB_NAME=hackathon
       - DB_USER=postgres
@@ -24,6 +24,18 @@ services:
       - ./templates:/app/templates
     depends_on:
       - redis
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: hackathon
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./data/events.sql:/docker-entrypoint-initdb.d/events.sql:ro
     restart: unless-stopped
 
   redis:
@@ -36,3 +48,4 @@ services:
 
 volumes:
   redis_data:
+  postgres_data:
