@@ -1,8 +1,11 @@
 let currentChart = null;
+let chartHistory = []; // Stocker les 3 derniers graphiques
+const MAX_CHARTS = 3;
 
 document.addEventListener('DOMContentLoaded', () => {
     setupChat();
     setupSuggestions();
+    loadChartHistory();
 });
 
 function setupChat() {
@@ -65,6 +68,7 @@ async function sendMessage() {
         // Handle response based on type
         if (data.type === 'chart') {
             addChartMessage(data);
+            saveChartToHistory(data);
         } else if (data.response) {
             addMessage(data.response, 'bot');
         } else if (data.content) {
@@ -121,37 +125,6 @@ function addMessage(text, type) {
     return messageDiv.id;
 }
 
-function addLoadingMessage() {
-    const chatMessages = document.getElementById('chatMessages');
-    const messageDiv = document.createElement('div');
-    const loadingId = `loading-${Date.now()}`;
-    messageDiv.className = 'message bot-message';
-    messageDiv.id = loadingId;
-    
-    const avatarDiv = document.createElement('div');
-    avatarDiv.className = 'message-avatar';
-    avatarDiv.textContent = '🤖';
-    
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'message-content';
-    contentDiv.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
-    
-    messageDiv.appendChild(avatarDiv);
-    messageDiv.appendChild(contentDiv);
-    chatMessages.appendChild(messageDiv);
-    
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    
-    return loadingId;
-}
-
-function removeMessage(messageId) {
-    const message = document.getElementById(messageId);
-    if (message) {
-        message.remove();
-    }
-}
-
 function addChartMessage(chartData) {
     const chatMessages = document.getElementById('chatMessages');
     const messageDiv = document.createElement('div');
@@ -180,6 +153,19 @@ function addChartMessage(chartData) {
         contentDiv.appendChild(descDiv);
     }
     
+    // Add period badge if filters exist
+    if (chartData.filters && (chartData.filters.start_date || chartData.filters.end_date)) {
+        const periodBadge = document.createElement('div');
+        periodBadge.className = 'period-badge';
+        periodBadge.innerHTML = `
+            <span class="period-icon">📅</span>
+            <span class="period-text">
+                ${chartData.filters.start_date} → ${chartData.filters.end_date}
+            </span>
+        `;
+        contentDiv.appendChild(periodBadge);
+    }
+    
     // Create canvas for chart
     const canvasWrapper = document.createElement('div');
     canvasWrapper.className = 'chart-wrapper';
@@ -205,11 +191,6 @@ function addChartMessage(chartData) {
 }
 
 function renderChart(canvas, chartData) {
-    // Destroy previous chart if exists
-    if (currentChart) {
-        currentChart.destroy();
-    }
-    
     const ctx = canvas.getContext('2d');
     
     // Determine colors based on chart type
@@ -263,7 +244,9 @@ function renderChart(canvas, chartData) {
         }
     };
     
-    currentChart = new Chart(ctx, config);
+    // Create chart instance and store reference
+    const chartInstance = new Chart(ctx, config);
+    canvas.chartInstance = chartInstance;
 }
 
 function generateColors(count) {
@@ -285,6 +268,37 @@ function generateColors(count) {
     return { background, border };
 }
 
+function addLoadingMessage() {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    const loadingId = `loading-${Date.now()}`;
+    messageDiv.className = 'message bot-message';
+    messageDiv.id = loadingId;
+    
+    const avatarDiv = document.createElement('div');
+    avatarDiv.className = 'message-avatar';
+    avatarDiv.textContent = '🤖';
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    contentDiv.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+    
+    messageDiv.appendChild(avatarDiv);
+    messageDiv.appendChild(contentDiv);
+    chatMessages.appendChild(messageDiv);
+    
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    return loadingId;
+}
+
+function removeMessage(messageId) {
+    const message = document.getElementById(messageId);
+    if (message) {
+        message.remove();
+    }
+}
+
 function setupSuggestions() {
     const suggestionCards = document.querySelectorAll('.suggestion-card');
     const chatInput = document.getElementById('chatInput');
@@ -297,4 +311,160 @@ function setupSuggestions() {
             sendMessage();
         });
     });
+}
+
+// Gestion de l'historique des graphiques
+function saveChartToHistory(chartData) {
+    // Ajouter au début du tableau
+    chartHistory.unshift({
+        ...chartData,
+        timestamp: Date.now()
+    });
+    
+    // Garder seulement les 3 derniers
+    if (chartHistory.length > MAX_CHARTS) {
+        chartHistory = chartHistory.slice(0, MAX_CHARTS);
+    }
+    
+    // Sauvegarder dans localStorage
+    try {
+        localStorage.setItem('chartHistory', JSON.stringify(chartHistory));
+    } catch (e) {
+        console.warn('Impossible de sauvegarder l\'historique:', e);
+    }
+    
+    // Mettre à jour l'affichage de l'historique
+    updateChartHistoryDisplay();
+}
+
+function loadChartHistory() {
+    try {
+        const saved = localStorage.getItem('chartHistory');
+        if (saved) {
+            chartHistory = JSON.parse(saved);
+            updateChartHistoryDisplay();
+        }
+    } catch (e) {
+        console.warn('Impossible de charger l\'historique:', e);
+        chartHistory = [];
+    }
+}
+
+function updateChartHistoryDisplay() {
+    const historyContainer = document.getElementById('chartHistoryContainer');
+    if (!historyContainer) return;
+    
+    if (chartHistory.length === 0) {
+        historyContainer.innerHTML = `
+            <div class="history-empty">
+                <span class="empty-icon">📊</span>
+                <p>Aucun graphique dans l'historique</p>
+                <p class="empty-hint">Demandez une visualisation pour commencer!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    historyContainer.innerHTML = chartHistory.map((chart, index) => `
+        <div class="history-chart-card" data-index="${index}">
+            <div class="history-chart-header">
+                <h4 class="history-chart-title">${chart.title}</h4>
+                <button class="history-chart-restore" onclick="restoreChart(${index})" title="Recharger ce graphique">
+                    🔄
+                </button>
+            </div>
+            <div class="history-chart-meta">
+                <span class="history-chart-type">${getChartTypeIcon(chart.chart_type)} ${getChartTypeName(chart.chart_type)}</span>
+                ${chart.filters && chart.filters.start_date ? `
+                    <span class="history-chart-period">📅 ${chart.filters.start_date} → ${chart.filters.end_date}</span>
+                ` : ''}
+            </div>
+            <div class="history-chart-preview">
+                <canvas id="history-chart-${index}" class="history-canvas"></canvas>
+            </div>
+        </div>
+    `).join('');
+    
+    // Rendre les graphiques miniatures
+    chartHistory.forEach((chart, index) => {
+        const canvas = document.getElementById(`history-chart-${index}`);
+        if (canvas) {
+            renderMiniChart(canvas, chart);
+        }
+    });
+}
+
+function renderMiniChart(canvas, chartData) {
+    const ctx = canvas.getContext('2d');
+    const colors = generateColors(chartData.data.labels.length);
+    
+    new Chart(ctx, {
+        type: chartData.chart_type,
+        data: {
+            labels: chartData.data.labels,
+            datasets: [{
+                data: chartData.data.values,
+                backgroundColor: chartData.chart_type === 'line' ? 
+                    'rgba(102, 126, 234, 0.2)' : colors.background,
+                borderColor: chartData.chart_type === 'line' ?
+                    'rgba(102, 126, 234, 1)' : colors.border,
+                borderWidth: 1,
+                tension: 0.4,
+                fill: chartData.chart_type === 'line'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            },
+            scales: chartData.chart_type === 'line' || chartData.chart_type === 'bar' ? {
+                x: { display: false },
+                y: { display: false }
+            } : {}
+        }
+    });
+}
+
+function restoreChart(index) {
+    const chart = chartHistory[index];
+    if (chart) {
+        addChartMessage(chart);
+        
+        // Scroll vers le bas du chat
+        const chatMessages = document.getElementById('chatMessages');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+}
+
+function getChartTypeIcon(type) {
+    const icons = {
+        'bar': '📊',
+        'line': '📈',
+        'pie': '🥧',
+        'doughnut': '🍩',
+        'scatter': '📍'
+    };
+    return icons[type] || '📊';
+}
+
+function getChartTypeName(type) {
+    const names = {
+        'bar': 'Barres',
+        'line': 'Lignes',
+        'pie': 'Circulaire',
+        'doughnut': 'Anneau',
+        'scatter': 'Nuage de points'
+    };
+    return names[type] || type;
+}
+
+function clearChartHistory() {
+    if (confirm('Voulez-vous vraiment effacer l\'historique des graphiques?')) {
+        chartHistory = [];
+        localStorage.removeItem('chartHistory');
+        updateChartHistoryDisplay();
+    }
 }

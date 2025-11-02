@@ -150,7 +150,22 @@ extra_hosts:
 - 📊 **Métriques en temps réel** : Visualisation des événements et catégories
 - 💬 **Chatbot IA** : Assistant intelligent pour rechercher des événements
 - 📈 **Graphiques interactifs** : Distribution par catégorie et tendances mensuelles
+- 📅 **Filtres de dates** : Visualisations avec plages de dates personnalisables (par défaut: 2 ans)
 - 🔄 **Mise à jour automatique** : Rafraîchissement toutes les 30 secondes
+- 🎨 **Visualisations avancées** : Agent IA spécialisé pour générer des graphiques sur demande
+
+## 💬 Exemples de questions pour l'agent de visualisation
+
+L'agent de visualisation peut comprendre des requêtes avec des filtres de dates:
+
+- "Montre-moi un graphique des événements par catégorie depuis janvier 2023"
+- "Affiche l'évolution des incidents sur les 6 derniers mois"
+- "Diagramme circulaire de la distribution par gravité pour l'année 2024"
+- "Graphique des coûts des mesures correctives entre 2022 et 2024"
+- "Visualise les événements par lieu depuis le début de l'année"
+- "Événements des 3 derniers mois"
+
+**Note**: Si aucune date n'est spécifiée, la période par défaut est de 2 ans (date actuelle - 2 ans jusqu'à aujourd'hui).
 
 ## 🏗️ Architecture
 
