@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyser une image - TechnoPlast</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <style>
+        .upload-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+        .upload-form {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .upload-zone {
+            border: 3px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+        }
+        .upload-zone:hover {
+            border-color: #6f42c1;
+            background: #f8f9fa;
+        }
+        .upload-zone.dragover {
+            border-color: #6f42c1;
+            background: #f0e6ff;
+        }
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        .file-input {
+            display: none;
+        }
+        .preview-container {
+            margin: 2rem 0;
+            text-align: center;
+            display: none;
+        }
+        .preview-image {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .btn-analyze {
+            width: 100%;
+            padding: 1.5rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: #6f42c1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: none;
+        }
+        .btn-analyze:hover {
+            background: #5a32a3;
+        }
+        .btn-analyze:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+        }
+        .back-link {
+            color: #2563eb;
+            text-decoration: none;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+        .status-message {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+            text-align: center;
+            display: none;
+        }
+        .status-processing {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-success {
+            background: #d1fae5;
+            color: #059669;
+        }
+        .status-error {
+            background: #fee;
+            color: #dc2626;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+            display: none;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6f42c1, #9333ea);
+            animation: progress 2s ease-in-out infinite;
+        }
+        @keyframes progress {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📸 Analyse d'Image par IA</h1>
+        </header>
+
+        <div class="upload-container">
+            <a href="/" class="back-link">← Retour au tableau de bord</a>
+            
+            <div class="upload-form">
+                <h2>🔍 Analyser une image de sécurité</h2>
+                <p style="color: #64748b; margin-bottom: 2rem;">
+                    Téléchargez une image et notre IA analysera automatiquement les risques de sécurité présents.
+                </p>
+
+                <div id="statusMessage" class="status-message"></div>
+                <div id="progressBar" class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+
+                <div id="uploadZone" class="upload-zone">
+                    <div class="upload-icon">📤</div>
+                    <h3>Cliquez ou glissez-déposez une image ici</h3>
+                    <p style="color: #64748b; margin-top: 0.5rem;">
+                        Formats acceptés: JPG, PNG, WebP (max 10 MB)
+                    </p>
+                </div>
+
+                <input 
+                    type="file" 
+                    id="fileInput" 
+                    class="file-input" 
+                    accept="image/jpeg,image/png,image/webp"
+                >
+
+                <div id="previewContainer" class="preview-container">
+                    <h3>Aperçu de l'image</h3>
+                    <img id="previewImage" class="preview-image" alt="Aperçu">
+                    <p id="fileName" style="color: #64748b; margin-top: 1rem;"></p>
+                </div>
+
+                <button id="analyzeButton" class="btn-analyze">
+                    🤖 Lancer l'analyse IA
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewImage = document.getElementById('previewImage');
+        const fileName = document.getElementById('fileName');
+        const analyzeButton = document.getElementById('analyzeButton');
+        const statusMessage = document.getElementById('statusMessage');
+        const progressBar = document.getElementById('progressBar');
+        
+        let selectedFile = null;
+
+        // Click sur la zone d'upload
+        uploadZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Sélection de fichier
+        fileInput.addEventListener('change', (e) => {
+            handleFile(e.target.files[0]);
+        });
+
+        // Drag & Drop
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFile(file);
+            } else {
+                showStatus('⚠️ Veuillez sélectionner une image valide', 'error');
+            }
+        });
+
+        function handleFile(file) {
+            if (!file) return;
+
+            // Vérifier la taille (10 MB max)
+            if (file.size > 10 * 1024 * 1024) {
+                showStatus('❌ L\'image est trop volumineuse (max 10 MB)', 'error');
+                return;
+            }
+
+            selectedFile = file;
+            
+            // Afficher l'aperçu
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                previewContainer.style.display = 'block';
+                analyzeButton.style.display = 'block';
+                fileName.textContent = `📎 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                uploadZone.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Lancer l'analyse
+        analyzeButton.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            analyzeButton.disabled = true;
+            analyzeButton.textContent = '⏳ Analyse en cours...';
+            progressBar.style.display = 'block';
+            showStatus('🔄 Upload et analyse de l\'image en cours...', 'processing');
+
+            try {
+                const formData = new FormData();
+                formData.append('image', selectedFile);
+
+                const response = await fetch('/api/analyze-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Erreur lors de l\'analyse');
+                }
+
+                // Le serveur renvoie le PDF directement
+                const blob = await response.blob();
+                
+                // Télécharger automatiquement le PDF
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `analyse_risques_${Date.now()}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                progressBar.style.display = 'none';
+                showStatus('✅ Analyse terminée ! Le PDF a été téléchargé.', 'success');
+                
+                // Réinitialiser après 3 secondes
+                setTimeout(() => {
+                    resetForm();
+                }, 3000);
+
+            } catch (error) {
+                console.error('Erreur:', error);
+                progressBar.style.display = 'none';
+                showStatus(`❌ Erreur: ${error.message}`, 'error');
+                analyzeButton.disabled = false;
+                analyzeButton.textContent = '🤖 Lancer l\'analyse IA';
+            }
+        });
+
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message status-${type}`;
+            statusMessage.style.display = 'block';
+        }
+
+        function resetForm() {
+            selectedFile = null;
+            previewContainer.style.display = 'none';
+            analyzeButton.style.display = 'none';
+            uploadZone.style.display = 'block';
+            fileInput.value = '';
+            statusMessage.style.display = 'none';
+            analyzeButton.disabled = false;
+            analyzeButton.textContent = '🤖 Lancer l\'analyse IA';
+        }
+    </script>
+</body>
+</html>

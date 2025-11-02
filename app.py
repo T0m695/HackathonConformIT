@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel
 import uvicorn
 import psycopg2
@@ -20,6 +20,15 @@ import uuid
 import time
 import requests
 from dotenv import load_dotenv
+from io import BytesIO
+from PIL import Image
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Image as RLImage
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.units import cm
+from reportlab.lib import colors
+import base64
 
 load_dotenv()
 
@@ -117,6 +126,226 @@ async def deposer_alerte_page():
     """Serve the alert submission page."""
     with open("templates/deposer-alerte.html", "r", encoding="utf-8") as f:
         return f.read()
+
+@app.get("/analyser-image", response_class=HTMLResponse)
+async def analyser_image_page():
+    """Serve the image analysis page."""
+    with open("templates/analyser-image.html", "r", encoding="utf-8") as f:
+        return f.read()
+
+@app.post("/api/analyze-image")
+async def analyze_image(image: UploadFile = File(...)):
+    """Analyze an image for safety risks using AWS Bedrock and return a PDF report."""
+    try:
+        logger.info(f"📸 Réception d'une image: {image.filename}")
+        
+        # Validate file type
+        if not image.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="Le fichier doit être une image")
+        
+        # Read image
+        image_bytes = await image.read()
+        
+        # Validate image size (10 MB max)
+        if len(image_bytes) > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="L'image est trop volumineuse (max 10 MB)")
+        
+        logger.info(f"✅ Image chargée: {len(image_bytes)} octets")
+        
+        # Encode image to base64 for Bedrock
+        image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+        
+        # Determine image format
+        image_format = "jpeg"
+        if image.content_type == "image/png":
+            image_format = "png"
+        elif image.content_type == "image/webp":
+            image_format = "webp"
+        
+        # Call AWS Bedrock for analysis
+        logger.info("🤖 Appel à AWS Bedrock pour l'analyse...")
+        bedrock_runtime = boto3.client(
+            service_name='bedrock-runtime',
+            region_name='us-east-1'
+        )
+        
+        prompt = """Vous êtes un expert en sécurité industrielle et en analyse d'images. Analysez cette image et identifiez tous les risques de sécurité présents.
+
+Pour chaque risque identifié, fournissez :
+1. Le type de risque (chute, électricité, produits chimiques, équipement, etc.)
+2. La gravité (Faible/Moyenne/Élevée/Critique)
+3. Une description détaillée du risque
+4. Des recommandations précises pour corriger le problème
+
+Structurez votre réponse de manière claire avec des titres et des listes à puces.
+Soyez exhaustif et détaillé dans votre analyse."""
+
+        request_body = {
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": 4096,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": f"image/{image_format}",
+                                "data": image_base64
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "text": prompt
+                        }
+                    ]
+                }
+            ]
+        }
+        
+        response = bedrock_runtime.invoke_model(
+            modelId='anthropic.claude-3-sonnet-20240229-v1:0',
+            body=json.dumps(request_body)
+        )
+        
+        response_body = json.loads(response['body'].read())
+        analysis_text = response_body['content'][0]['text']
+        
+        logger.info(f"✅ Analyse terminée: {len(analysis_text)} caractères")
+        
+        # Generate PDF in memory
+        logger.info("📄 Génération du PDF...")
+        pdf_buffer = BytesIO()
+        
+        # Create PDF document
+        doc = SimpleDocTemplate(pdf_buffer, pagesize=A4)
+        story = []
+        styles = getSampleStyleSheet()
+        
+        # Custom styles
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            textColor=colors.HexColor('#dc3545'),
+            spaceAfter=30,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold'
+        )
+        
+        subtitle_style = ParagraphStyle(
+            'CustomSubtitle',
+            parent=styles['Normal'],
+            fontSize=12,
+            textColor=colors.HexColor('#6c757d'),
+            spaceAfter=20,
+            alignment=TA_CENTER
+        )
+        
+        # Title
+        story.append(Paragraph("🔍 ANALYSE DE RISQUES DE SÉCURITÉ", title_style))
+        current_time = datetime.now().strftime("%d/%m/%Y à %H:%M:%S")
+        story.append(Paragraph(f"Généré le {current_time}", subtitle_style))
+        story.append(Spacer(1, 0.5*cm))
+        
+        # Add image to PDF
+        try:
+            img = Image.open(BytesIO(image_bytes))
+            img_width, img_height = img.size
+            aspect = img_height / float(img_width)
+            
+            # Resize image to fit in PDF (max 12cm width)
+            display_width = 12*cm
+            display_height = display_width * aspect
+            
+            # Save image to temporary buffer
+            img_buffer = BytesIO()
+            img.save(img_buffer, format='PNG')
+            img_buffer.seek(0)
+            
+            rl_image = RLImage(img_buffer, width=display_width, height=display_height)
+            story.append(rl_image)
+            story.append(Spacer(1, 1*cm))
+        except Exception as e:
+            logger.error(f"⚠️ Erreur lors de l'ajout de l'image au PDF: {e}")
+        
+        # Page break
+        story.append(PageBreak())
+        
+        # Analysis content
+        story.append(Paragraph("📋 ANALYSE DÉTAILLÉE", title_style))
+        story.append(Spacer(1, 0.5*cm))
+        
+        # Parse and format analysis text
+        lines = analysis_text.split('\n')
+        for line in lines:
+            line = line.strip()
+            if not line:
+                story.append(Spacer(1, 0.3*cm))
+                continue
+            
+            # Escape XML special characters
+            line = line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            
+            # Detect headings
+            if line.startswith('#') or line.startswith('**'):
+                line = line.replace('#', '').replace('**', '').strip()
+                heading_style = ParagraphStyle(
+                    'Heading',
+                    parent=styles['Heading2'],
+                    fontSize=14,
+                    textColor=colors.HexColor('#2563eb'),
+                    spaceAfter=10,
+                    spaceBefore=15
+                )
+                story.append(Paragraph(line, heading_style))
+            # Detect bullet points
+            elif line.startswith('•') or line.startswith('-') or line.startswith('*'):
+                line = '• ' + line[1:].strip()
+                story.append(Paragraph(line, styles['Normal']))
+            # Detect numbered lists
+            elif len(line) > 2 and line[0].isdigit() and line[1] in '.):':
+                story.append(Paragraph(line, styles['Normal']))
+            else:
+                story.append(Paragraph(line, styles['Normal']))
+        
+        # Footer
+        story.append(Spacer(1, 1*cm))
+        footer_style = ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=9,
+            textColor=colors.HexColor('#6c757d'),
+            alignment=TA_CENTER
+        )
+        story.append(Paragraph("Rapport généré automatiquement par l'IA - TechnoPlast Safety Dashboard", footer_style))
+        
+        # Build PDF
+        doc.build(story)
+        
+        # Get PDF bytes
+        pdf_buffer.seek(0)
+        pdf_bytes = pdf_buffer.read()
+        
+        logger.info(f"✅ PDF généré: {len(pdf_bytes)} octets")
+        
+        # Return PDF as download
+        return StreamingResponse(
+            BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename=analyse_risques_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Erreur lors de l'analyse d'image: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Erreur lors de l'analyse: {str(e)}")
 
 @app.get("/api/event/{event_id}")
 async def get_event_details(event_id: int):
