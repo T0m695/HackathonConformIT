@@ -1,0 +1,512 @@
+{
+  "tables": {
+    "corrective_measure": {
+      "description": "La table \"corrective_measure\" semble être utilisée pour enregistrer les mesures correctives mises en place dans une organisation. Chaque entrée de la table représente une mesure spécifique, avec des informations telles que l'identifiant de la mesure, son nom, sa description détaillée, l'identifiant du propriétaire, la date de mise en œuvre, le coût et l'unité organisationnelle concernée. Cette table permet de garder une trace des différentes actions entreprises pour résoudre des problèmes ou améliorer les processus, ce qui peut être utile pour la gestion des risques, la conformité réglementaire et l'amélioration continue des opérations de l'entreprise.",
+      "columns": {
+        "measure_id": {
+          "type": "INTEGER",
+          "description": "Identifiant unique de la mesure corrective",
+          "synonyms": [
+            "id_mesure",
+            "numéro_mesure",
+            "référence_mesure",
+            "code_mesure"
+          ]
+        },
+        "name": {
+          "type": "VARCHAR",
+          "description": "Nom de la mesure corrective mise en place",
+          "synonyms": [
+            "mesure",
+            "action",
+            "intervention",
+            "solution"
+          ]
+        },
+        "description": {
+          "type": "TEXT",
+          "description": "Description of the corrective measure to be implemented",
+          "synonyms": [
+            "measure",
+            "action",
+            "step",
+            "procedure"
+          ]
+        },
+        "owner_id": {
+          "type": "INTEGER",
+          "description": "Identifiant unique de la personne responsable de la mesure corrective",
+          "synonyms": [
+            "id_propriétaire",
+            "id_responsable",
+            "id_personne",
+            "référence_propriétaire"
+          ]
+        },
+        "implementation_date": {
+          "type": "DATE",
+          "description": "Date d'implémentation de la mesure corrective",
+          "synonyms": [
+            "date_implémentation",
+            "date_mise_en_place",
+            "date_application",
+            "date_réalisation"
+          ]
+        },
+        "cost": {
+          "type": "NUMERIC",
+          "description": "Montant des coûts associés à une mesure corrective",
+          "synonyms": [
+            "dépense",
+            "frais",
+            "coût",
+            "montant"
+          ]
+        },
+        "organizational_unit_id": {
+          "type": "INTEGER",
+          "description": "Identifiant unique de l'unité organisationnelle associée à la mesure corrective",
+          "synonyms": [
+            "id_unité",
+            "code_unité",
+            "référence_unité",
+            "numéro_unité"
+          ]
+        }
+      }
+    },
+    "event": {
+      "description": "La table \"event\" sert à enregistrer et à suivre les différents événements qui se produisent dans l'entreprise. Elle contient des informations détaillées sur chaque événement, telles que l'identifiant de l'événement, l'identifiant de la personne qui l'a déclaré, la description de l'événement, les dates et heures de début et de fin, l'unité organisationnelle concernée, le type d'événement et sa classification. Cette table permet de documenter et d'analyser les incidents, les accidents, les déversements et autres événements importants afin d'améliorer les processus et la sécurité de l'entreprise.",
+      "columns": {
+        "event_id": {
+          "type": "INTEGER",
+          "description": "Identifiant unique de l'événement",
+          "synonyms": [
+            "id_événement",
+            "numéro_événement",
+            "référence",
+            "code"
+          ]
+        },
+        "declared_by_id": {
+          "type": "INTEGER",
+          "description": "Identifiant unique de la personne ayant déclaré l'événement",
+          "synonyms": [
+            "id_déclarant",
+            "numéro_déclarant",
+            "référence_déclarant",
+            "code_déclarant"
+          ]
+        },
+        "description": {
+          "type": "TEXT",
+          "description": "Texte descriptif de l'événement",
+          "synonyms": [
+            "description",
+            "détails",
+            "résumé",
+            "explication"
+          ]
+        },
+        "start_datetime": {
+          "type": "TIMESTAMP",
+          "description": "Horodatage de début de l'événement",
+          "synonyms": [
+            "date_début",
+            "heure_début",
+            "timestamp_début",
+            "début"
+          ]
+        },
+        "end_datetime": {
+          "type": "TIMESTAMP",
+          "description": "Horodatage de la fin d'un événement",
+          "synonyms": [
+            "date_fin",
+            "heure_fin",
+            "timestamp_fin",
+            "date_heure_fin"
+          ]
+        },
+        "organizational_unit_id": {
+          "type": "INTEGER",
+          "description": "Identifiant unique de l'unité organisationnelle associée à l'événement",
+          "synonyms": [
+            "id_unité",
+            "code_unité",
+            "référence_unité",
+            "numéro_unité"
+          ]
+        },
+        "type": {
+          "type": "VARCHAR",
+          "description": "Identifie le type d'événement",
+          "synonyms": [
+            "catégorie",
+            "classe",
+            "genre"
+          ]
+        },
+        "classification": {
+          "type": "VARCHAR",
+          "description": "Catégorie de l'événement",
+          "synonyms": [
+            "type_événement",
+            "catégorie",
+            "classe",
+            "genre"
+          ]
+        }
+      }
+    },
+    "event_corrective_measure": {
+      "description": "La table `event_corrective_measure` sert à établir une relation entre les événements (`event_id`) et les mesures correctives (`measure_id`) qui leur sont associées. Cette table permet de lier chaque événement à une ou plusieurs mesures correctives prises pour y remédier. Par exemple, dans les données fournies, l'événement avec l'`event_id` '80' est lié aux mesures correctives avec les `measure_id` '186' et '187', tandis que l'événement avec l'`event_id` '82' est lié à la mesure corrective avec le `measure_id` '188'.",
+      "columns": {
+        "event_id": {
+          "type": "INTEGER",
+          "description": "Identifiant unique de l'événement corrective",
+          "synonyms": [
+            "id_événement",
+            "numéro_événement",
+            "référence",
+            "code"
+          ]
+        },
+        "measure_id": {
+          "type": "INTEGER",
+          "description": "Identifiant unique de la mesure corrective",
+          "synonyms": [
+            "id_mesure",
+            "numéro_mesure",
+            "référence_mesure",
+            "code_mesure"
+          ]
+        }
+      }
+    },
+    "event_employee": {
+      "description": "La table `event_employee` sert à stocker les informations sur l'implication des personnes dans des événements spécifiques. Chaque entrée de cette table représente une personne impliquée dans un événement, avec son rôle ou son type d'implication (par exemple, \"Victim\" ou \"Responder\"). Cette table permet de faire le lien entre les événements et les personnes concernées, ce qui est utile pour analyser les données et comprendre les différents rôles joués par les individus lors d'événements.",
+      "columns": {
+        "event_id": {
+          "type": "INTEGER",
+          "description": "Identifiant unique de l'événement",
+          "synonyms": [
+            "id_événement",
+            "numéro_événement",
+            "référence",
+            "code"
+          ]
+        },
+        "person_id": {
+          "type": "INTEGER",
+          "description": "Identifiant unique de l'employé associé à l'événement",
+          "synonyms": [
+            "id_employé",
+            "numéro_employé",
+            "référence_employé",
+            "code_employé"
+          ]
+        },
+        "involvement_type": {
+          "type": "VARCHAR",
+          "description": "Identifie le rôle de l'employé dans un événement",
+          "synonyms": [
+            "rôle",
+            "fonction",
+            "position",
+            "implication"
+          ]
+        }
+      }
+    },
+    "event_risk": {
+      "description": "La table `event_risk` sert à établir une relation entre les événements (`event_id`) et les risques (`risk_id`) associés à ces événements. Chaque entrée de cette table représente un lien entre un événement spécifique et un risque spécifique. Cette table permet de modéliser les relations complexes entre les événements et les risques, ce qui est utile pour l'analyse et la gestion des risques liés à des événements.",
+      "columns": {
+        "event_id": {
+          "type": "INTEGER",
+          "description": "Identifiant unique de l'événement",
+          "synonyms": [
+            "id_événement",
+            "numéro_événement",
+            "référence",
+            "code"
+          ]
+        },
+        "risk_id": {
+          "type": "INTEGER",
+          "description": "Identifiant unique de l'événement de risque",
+          "synonyms": [
+            "id_risque",
+            "numéro_risque",
+            "référence_risque",
+            "code_risque"
+          ]
+        }
+      }
+    },
+    "organizational_unit": {
+      "description": "La table \"organizational_unit\" semble être utilisée pour stocker des informations sur les différentes unités organisationnelles d'une entreprise. Chaque entrée représente une unité spécifique avec les informations suivantes :\n\n- unit_id : un identifiant unique pour chaque unité\n- identifier : un code d'identification court pour chaque unité\n- name : le nom descriptif de chaque unité\n- location : l'emplacement physique de chaque unité\n\nCette table permet de garder une trace des différentes unités de production, de leurs caractéristiques et de leur emplacement au sein de l'entreprise. Cela peut être utile pour la gestion des opérations, la planification de la production et l'organisation des ressources.",
+      "columns": {
+        "unit_id": {
+          "type": "INTEGER",
+          "description": "Identifiant unique de l'unité organisationnelle",
+          "synonyms": [
+            "id_unité",
+            "numéro_unité",
+            "référence_unité",
+            "code_unité"
+          ]
+        },
+        "identifier": {
+          "type": "VARCHAR",
+          "description": "Identifiant unique de l'unité organisationnelle",
+          "synonyms": [
+            "id_unité",
+            "code_unité",
+            "référence_unité"
+          ]
+        },
+        "name": {
+          "type": "VARCHAR",
+          "description": "Nom de l'unité organisationnelle",
+          "synonyms": [
+            "département",
+            "division",
+            "service",
+            "section"
+          ]
+        },
+        "location": {
+          "type": "VARCHAR",
+          "description": "Identifiant unique de l'unité organisationnelle",
+          "synonyms": [
+            "site",
+            "zone",
+            "bâtiment",
+            "aile"
+          ]
+        }
+      }
+    },
+    "person": {
+      "description": "La table \"person\" est utilisée pour stocker les informations relatives aux employés de l'entreprise. Elle contient les colonnes suivantes :\n\n- \"person_id\" : un identifiant unique pour chaque employé.\n- \"matricule\" : le numéro d'employé attribué à chaque personne.\n- \"name\" : le prénom de l'employé.\n- \"family_name\" : le nom de famille de l'employé.\n- \"role\" : le poste occupé par l'employé au sein de l'entreprise.\n\nCette table permet de centraliser les informations clés sur les employés, facilitant ainsi la gestion des ressources humaines et l'identification des différents rôles au sein de l'organisation.",
+      "columns": {
+        "person_id": {
+          "type": "INTEGER",
+          "description": "Identifiant unique de la personne",
+          "synonyms": [
+            "id_personne",
+            "numéro_personne",
+            "référence",
+            "code"
+          ]
+        },
+        "matricule": {
+          "type": "VARCHAR",
+          "description": "Identifiant unique de l'employé",
+          "synonyms": [
+            "id_employé",
+            "numéro_employé",
+            "référence_employé",
+            "code_employé"
+          ]
+        },
+        "name": {
+          "type": "VARCHAR",
+          "description": "Nom de la personne",
+          "synonyms": [
+            "prénom",
+            "nom",
+            "identité"
+          ]
+        },
+        "family_name": {
+          "type": "VARCHAR",
+          "description": "Nom de famille d'une personne",
+          "synonyms": [
+            "nom",
+            "cognomen",
+            "patronyme",
+            "apellido"
+          ]
+        },
+        "role": {
+          "type": "VARCHAR",
+          "description": "Identifie le rôle ou le titre d'emploi d'une personne dans l'organisation",
+          "synonyms": [
+            "fonction",
+            "poste",
+            "titre",
+            "responsabilité"
+          ]
+        }
+      }
+    },
+    "risk": {
+      "description": "La table \"risk\" est utilisée pour stocker des informations sur les différents risques identifiés dans une organisation. Chaque entrée de la table représente un risque spécifique, avec les informations suivantes :\n\n- `risk_id` : un identifiant unique pour chaque risque\n- `name` : le nom descriptif du risque\n- `gravity` : l'importance ou la gravité du risque, pouvant prendre les valeurs \"CRITICAL\", \"HIGH\" ou \"MEDIUM\"\n- `probability` : la probabilité que le risque se produise, pouvant prendre les valeurs \"LOW\", \"MEDIUM\" ou \"HIGH\"\n\nCette table permet de centraliser et de gérer les différents risques auxquels l'organisation peut être confrontée, en fournissant des informations clés sur leur nature et leur niveau de criticité. Cela aide les décideurs à prioriser les actions de gestion des risques et à mettre en place des mesures de prévention et de mitigation appropriées.",
+      "columns": {
+        "risk_id": {
+          "type": "INTEGER",
+          "description": "Identifiant unique de l'événement de risque",
+          "synonyms": [
+            "id_risque",
+            "numéro_risque",
+            "référence_risque",
+            "code_risque"
+          ]
+        },
+        "name": {
+          "type": "VARCHAR",
+          "description": "Nom de l'événement de risque",
+          "synonyms": [
+            "événement",
+            "incident",
+            "danger",
+            "risque"
+          ]
+        },
+        "gravity": {
+          "type": "VARCHAR",
+          "description": "Niveau de gravité d'un risque",
+          "synonyms": [
+            "sévérité",
+            "importance",
+            "criticité",
+            "danger"
+          ]
+        },
+        "probability": {
+          "type": "VARCHAR",
+          "description": "Niveau de probabilité d'un risque",
+          "synonyms": [
+            "probabilité",
+            "risque",
+            "éventualité",
+            "chance"
+          ]
+        }
+      }
+    }
+  },
+  "relationships": [
+    {
+      "from": "risk",
+      "to": "organizational_unit",
+      "on": "organizational_unit_id",
+      "type": "foreign_key",
+      "description": "La table \"risk\" est liée à la table \"organizational_unit\" par la colonne \"organizational_unit_id\"."
+    },
+    {
+      "from": "risk",
+      "to": "person",
+      "on": "owner_id",
+      "type": "foreign_key",
+      "description": "La table \"risk\" est liée à la table \"person\" par la colonne \"owner_id\", établissant une relation où chaque enregistrement de la table \"risk\" est associé à un enregistrement spécifique de la table \"per..."
+    },
+    {
+      "from": "risk",
+      "to": "event",
+      "on": "event_id",
+      "type": "foreign_key",
+      "description": "La table \"risk\" est liée à la table \"event\" par la colonne \"event_id\", établissant une relation entre les risques et les événements."
+    },
+    {
+      "from": "risk",
+      "to": "corrective_measure",
+      "on": "measure_id",
+      "type": "foreign_key",
+      "description": "La table \"risk\" est liée à la table \"corrective_measure\" par la colonne \"measure_id\", établissant une relation entre les risques identifiés et les mesures correctives mises en place pour y répondre."
+    },
+    {
+      "from": "risk",
+      "to": "person",
+      "on": "declared_by_id",
+      "type": "foreign_key",
+      "description": "La table \"risk\" est liée à la table \"person\" par la colonne \"declared_by_id\", qui établit une relation entre les risques déclarés et les personnes qui les ont déclarés."
+    },
+    {
+      "from": "risk",
+      "to": "person",
+      "on": "person_id",
+      "type": "foreign_key",
+      "description": "La table \"risk\" est liée à la table \"person\" par la colonne \"person_id\"."
+    },
+    {
+      "from": "risk",
+      "to": "risk",
+      "on": "risk_id",
+      "type": "foreign_key",
+      "description": "La table \"risk\" est liée à elle-même via la colonne \"risk_id\", formant une relation réflexive."
+    },
+    {
+      "from": "corrective_measure",
+      "to": "organizational_unit",
+      "on": "organizational_unit_id",
+      "type": "foreign_key",
+      "description": "La table \"corrective_measure\" est liée à la table \"organizational_unit\" par la colonne \"organizational_unit_id\"."
+    },
+    {
+      "from": "corrective_measure",
+      "to": "person",
+      "on": "owner_id",
+      "type": "foreign_key",
+      "description": "La table \"corrective_measure\" est liée à la table \"person\" par la colonne \"owner_id\", qui établit une relation où chaque mesure corrective est associée à une personne spécifique."
+    },
+    {
+      "from": "event_corrective_measure",
+      "to": "event",
+      "on": "event_id",
+      "type": "foreign_key",
+      "description": "La table \"event_corrective_measure\" contient des mesures correctives liées aux événements enregistrés dans la table \"event\" via la colonne de jointure \"event_id\"."
+    },
+    {
+      "from": "event_corrective_measure",
+      "to": "corrective_measure",
+      "on": "measure_id",
+      "type": "foreign_key",
+      "description": "La table \"event_corrective_measure\" est liée à la table \"corrective_measure\" par la colonne \"measure_id\", établissant une relation où chaque événement de la table \"event_corrective_measure\" est associ..."
+    },
+    {
+      "from": "event",
+      "to": "person",
+      "on": "declared_by_id",
+      "type": "foreign_key",
+      "description": "La table \"event\" est liée à la table \"person\" par la colonne \"declared_by_id\", qui établit une relation entre les événements et les personnes qui les ont déclarés."
+    },
+    {
+      "from": "event_employee",
+      "to": "event",
+      "on": "event_id",
+      "type": "foreign_key",
+      "description": "La table \"event_employee\" est liée à la table \"event\" par la colonne \"event_id\", établissant une relation entre les événements et les employés qui y participent."
+    },
+    {
+      "from": "event_employee",
+      "to": "person",
+      "on": "person_id",
+      "type": "foreign_key",
+      "description": "La table \"event_employee\" est liée à la table \"person\" par la colonne \"person_id\", établissant une relation entre les événements et les personnes qui y participent."
+    },
+    {
+      "from": "event",
+      "to": "organizational_unit",
+      "on": "organizational_unit_id",
+      "type": "foreign_key",
+      "description": "La table \"event\" est liée à la table \"organizational_unit\" par la colonne \"organizational_unit_id\"."
+    },
+    {
+      "from": "event_risk",
+      "to": "event",
+      "on": "event_id",
+      "type": "foreign_key",
+      "description": "La table \"event_risk\" contient des informations sur les risques liés à des événements, et elle est liée à la table \"event\" par la colonne \"event_id\"."
+    },
+    {
+      "from": "event_risk",
+      "to": "risk",
+      "on": "risk_id",
+      "type": "foreign_key",
+      "description": "La table \"event_risk\" est liée à la table \"risk\" par la colonne \"risk_id\", établissant une relation entre les événements et les risques associés."
+    }
+  ]
+}
