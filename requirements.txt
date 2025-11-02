@@ -38,7 +38,6 @@ orjson==3.11.4
 ormsgpack==1.11.0
 packaging==23.2
 propcache==0.4.1
-psycopg2==2.9.11
 psycopg2-binary==2.9.11
 pydantic==2.12.3
 pydantic-settings==2.11.0
