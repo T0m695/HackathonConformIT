@@ -21,7 +21,6 @@ class EnhancedRAGPipeline:
         self.vector_manager = VectorStoreManager(schema_path)
         self.sql_generator = SQLGenerator(Config.DB_URI)
         self.text_indexer = FAISSTextIndexer()
-        self.text_indexer.build_faiss_indexes()
         logger.info("RAG Pipeline initialized with integrated FAISS text search")
     
     def _detect_text_search_need(self, question: str) -> Optional[Tuple[str, str]]:
@@ -34,6 +33,13 @@ class EnhancedRAGPipeline:
         # Par défaut, chercher dans event.description avec la query et les embeddings FAISS
         return ("event", "description")
     
+    def build_text_indexes(self, force: bool = False):
+        """Build FAISS text indexes if they don't exist or force is True"""
+        if force:
+            self.text_indexer.clear_indexes()
+        if not self.text_indexer.indexes:
+            self.text_indexer.build_faiss_indexes()
+            
     def _get_text_search_context(
         self, 
         question: str, 
@@ -42,6 +48,11 @@ class EnhancedRAGPipeline:
         top_k: int = 5
     ) -> str:
         """Effectue une recherche vectorielle et retourne le contexte formaté"""
+        
+        # Build indexes if they don't exist
+        if not self.text_indexer.indexes:
+            logger.warning("FAISS indexes not found, building them first...")
+            self.build_text_indexes()
         
         try:
             results = self.text_indexer.search(question, table, column, top_k)

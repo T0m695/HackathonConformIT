@@ -2,6 +2,7 @@
 import os
 import json
 import pickle
+import shutil
 import urllib.parse
 import psycopg2
 import numpy as np
@@ -17,8 +18,15 @@ class FAISSTextIndexer:
     def __init__(self, index_base_dir: str = "faiss_text_indexes"):
         self.index_base_dir = index_base_dir
         self.indexes: Dict[str, Dict] = {}
+        self.query_cache: Dict[str, np.ndarray] = {}  # Cache for query embeddings
         os.makedirs(index_base_dir, exist_ok=True)
-        self._load_indexes()
+        
+        # Try to load existing indexes first
+        if not self._load_indexes():
+            logger.warning("No pre-built FAISS indexes found, you may want to call build_faiss_indexes()")
+            
+        # Load query cache if it exists
+        self._load_query_cache()
     
     def _get_db_connection(self):
         """Get psycopg2 connection from DB_URI."""
@@ -43,10 +51,37 @@ class FAISSTextIndexer:
     def _get_metadata_path(self, table: str, column: str) -> str:
         return os.path.join(self.index_base_dir, f"{table}_{column}_metadata.pkl")
     
-    def _load_indexes(self):
-        """Charge tous les index FAISS existants"""
+    def _get_query_cache_path(self) -> str:
+        return os.path.join(self.index_base_dir, "query_cache.pkl")
+        
+    def _load_query_cache(self):
+        """Load query embedding cache from disk"""
+        cache_path = self._get_query_cache_path()
+        if os.path.exists(cache_path):
+            try:
+                with open(cache_path, 'rb') as f:
+                    self.query_cache = pickle.load(f)
+                logger.info(f"Loaded {len(self.query_cache)} cached query embeddings")
+            except Exception as e:
+                logger.error(f"Failed to load query cache: {e}")
+                self.query_cache = {}
+                
+    def _save_query_cache(self):
+        """Save query embedding cache to disk"""
+        cache_path = self._get_query_cache_path()
+        try:
+            with open(cache_path, 'wb') as f:
+                pickle.dump(self.query_cache, f)
+            logger.info(f"Saved {len(self.query_cache)} query embeddings to cache")
+        except Exception as e:
+            logger.error(f"Failed to save query cache: {e}")
+    
+    def _load_indexes(self) -> bool:
+        """Charge tous les index FAISS existants. Retourne True si au moins un index a été chargé."""
         if not os.path.exists(self.index_base_dir):
-            return
+            return False
+            
+        found_any = False
         
         for filename in os.listdir(self.index_base_dir):
             if filename.endswith('.index'):
@@ -74,8 +109,18 @@ class FAISSTextIndexer:
                                 'column': column
                             }
                             logger.info(f"Loaded FAISS index: {key} ({index.ntotal} vectors)")
+                            found_any = True
                     except Exception as e:
                         logger.error(f"Failed to load index {base_name}: {e}")
+        
+        return found_any
+    
+    def clear_indexes(self):
+        """Clear all FAISS indexes and rebuild them"""
+        self.indexes.clear()
+        if os.path.exists(self.index_base_dir):
+            shutil.rmtree(self.index_base_dir)
+        os.makedirs(self.index_base_dir, exist_ok=True)
     
     def build_index_for_column(
         self, 
@@ -218,14 +263,24 @@ class FAISSTextIndexer:
         index = index_data['index']
         metadata = index_data['metadata']
         
-        # Générer l'embedding de la requête
-        query_emb = invoke_embedding(query)
-        query_array = np.array([query_emb], dtype=np.float32)
-        
-        # Normaliser
-        norm = np.linalg.norm(query_array)
-        if norm > 0:
-            query_array = query_array / norm
+        # Try to get embedding from cache first
+        if query in self.query_cache:
+            query_array = self.query_cache[query]
+            logger.info(f"Using cached embedding for query: {query[:50]}...")
+        else:
+            # Generate new embedding if not in cache
+            query_emb = invoke_embedding(query)
+            query_array = np.array([query_emb], dtype=np.float32)
+            
+            # Normalize
+            norm = np.linalg.norm(query_array)
+            if norm > 0:
+                query_array = query_array / norm
+                
+            # Cache the normalized embedding
+            self.query_cache[query] = query_array
+            self._save_query_cache()
+            logger.info(f"Generated and cached new embedding for query: {query[:50]}...")
         
         # Recherche dans l'index
         distances, indices = index.search(query_array, min(top_k, index.ntotal))

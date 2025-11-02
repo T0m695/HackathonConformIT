@@ -9,14 +9,14 @@ from langchain_core.documents import Document
 from ATTEMPT1.config import Config, logger
 
 from ATTEMPT1.builders import SchemaDocumentBuilder
-from ATTEMPT1.bedrock_utils import BedrockEmbeddings
+from ATTEMPT1.bedrock_utils import CachedBedrockEmbeddings
 
 class VectorStoreManager:
     """Manages the vector store for schema documents."""
     
     def __init__(self, schema_path: str = "schema.json"):
         self.schema_path = schema_path
-        self.embeddings = BedrockEmbeddings()
+        self.embeddings = CachedBedrockEmbeddings()  # Using a caching wrapper
         self.vectorstore = self._init_vectorstore()
         self.retriever = self.vectorstore.as_retriever(
             search_kwargs={"k": Config.TOP_K_RETRIEVAL}
