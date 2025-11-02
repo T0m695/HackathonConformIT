@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 import uvicorn
 import psycopg2
 import psycopg2.extras
+from psycopg2 import errors as psycopg2_errors
 from visualization_agent import VisualizationAgent
 import json
 from database import get_connection, init_database
@@ -14,6 +15,13 @@ from datetime import datetime
 from ATTEMPT1.pipeline import EnhancedRAGPipeline
 from ATTEMPT1.config import logger
 from bardin import query_with_ai
+import boto3
+import uuid
+import time
+import requests
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI(title="TechnoPlast Safety Dashboard")
 
@@ -102,6 +110,12 @@ async def event_detail_page(event_id: int):
 async def ask_question_page():
     """Serve the ask question page."""
     with open("templates/ask-question.html", "r", encoding="utf-8") as f:
+        return f.read()
+
+@app.get("/deposer-alerte", response_class=HTMLResponse)
+async def deposer_alerte_page():
+    """Serve the alert submission page."""
+    with open("templates/deposer-alerte.html", "r", encoding="utf-8") as f:
         return f.read()
 
 @app.get("/api/event/{event_id}")
@@ -287,6 +301,148 @@ async def healthcheck():
         "agent_available": rag_pipeline is not None,
         "version": "1.0.0"
     }
+
+@app.post("/api/create-event-audio")
+async def create_event_audio(request: dict):
+    """Create event from audio transcription."""
+    try:
+        from event_creator import create_event
+        from datetime import datetime
+        
+        description = request.get('description', '').strip()
+        
+        # Validation de la description
+        if not description or len(description) < 10:
+            raise HTTPException(
+                status_code=400, 
+                detail="La description doit contenir au moins 10 caractères"
+            )
+        
+        logger.info(f"📝 Création d'événement avec description: {description[:100]}...")
+        logger.info(f"   Type: {request.get('event_type', 'EHS')}")
+        logger.info(f"   Classification: {request.get('classification', 'PREVENTIVE_DECLARATION')}")
+        
+        event = create_event(
+            declared_by_id=request.get('declared_by_id', 1),
+            description=description,
+            start_datetime=datetime.now(),
+            organizational_unit_id=request.get('organizational_unit_id', 1),
+            event_type=request.get('event_type', 'EHS'),
+            classification=request.get('classification', 'PREVENTIVE_DECLARATION')
+        )
+        
+        if event:
+            logger.info(f"✅ Événement créé - ID: {event['event_id']}")
+            return {
+                "success": True,
+                "event": dict(event),
+                "message": "Événement créé avec succès"
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Échec de la création")
+            
+    except psycopg2_errors.ForeignKeyViolation as e:
+        logger.error(f"❌ Erreur de clé étrangère: {e}")
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Erreur d'intégrité de la base de données: {str(e)}"
+        )
+    except ValueError as e:
+        logger.error(f"❌ Erreur de validation: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"❌ Error creating event from audio: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/transcribe-audio")
+async def transcribe_audio(audio_file: UploadFile = File(...)):
+    """Transcribe audio file using AWS Transcribe."""
+    try:
+        S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "bucket-translator")
+        REGION = os.getenv("AWS_DEFAULT_REGION", "us-east-1")
+        
+        logger.info(f"🎤 Début de la transcription - Bucket: {S3_BUCKET_NAME}, Région: {REGION}")
+        
+        # Sauvegarder temporairement le fichier
+        temp_file = f"/tmp/audio_{uuid.uuid4()}.wav"
+        with open(temp_file, "wb") as f:
+            content = await audio_file.read()
+            f.write(content)
+        
+        logger.info(f"📁 Fichier audio sauvegardé: {temp_file} ({len(content)} bytes)")
+        
+        # Upload vers S3
+        s3_client = boto3.client('s3', region_name=REGION)
+        transcribe_client = boto3.client('transcribe', region_name=REGION)
+        
+        job_name = f"event-transcription-{uuid.uuid4()}"
+        file_key = f"event-audio/{job_name}.wav"
+        
+        logger.info(f"☁️ Upload vers S3: s3://{S3_BUCKET_NAME}/{file_key}")
+        s3_client.upload_file(temp_file, S3_BUCKET_NAME, file_key)
+        os.remove(temp_file)
+        
+        # Démarrer la transcription
+        file_uri = f"s3://{S3_BUCKET_NAME}/{file_key}"
+        logger.info(f"🚀 Démarrage du job Transcribe: {job_name}")
+        
+        transcribe_client.start_transcription_job(
+            TranscriptionJobName=job_name,
+            Media={'MediaFileUri': file_uri},
+            MediaFormat='wav',
+            LanguageCode='fr-FR'
+        )
+        
+        # Attendre le résultat
+        max_wait = 60  # 60 secondes max
+        waited = 0
+        while waited < max_wait:
+            status = transcribe_client.get_transcription_job(
+                TranscriptionJobName=job_name
+            )
+            job_status = status['TranscriptionJob']['TranscriptionJobStatus']
+            
+            logger.info(f"⏳ Statut du job {job_name}: {job_status} (attendu: {waited}s)")
+            
+            if job_status == 'COMPLETED':
+                transcript_uri = status['TranscriptionJob']['Transcript']['TranscriptFileUri']
+                logger.info(f"📥 Récupération du résultat depuis: {transcript_uri}")
+                
+                result_response = requests.get(transcript_uri)
+                result_data = result_response.json()
+                transcript_text = result_data['results']['transcripts'][0]['transcript']
+                
+                logger.info(f"✅ Transcription réussie: {transcript_text[:100]}...")
+                
+                # Nettoyage
+                s3_client.delete_object(Bucket=S3_BUCKET_NAME, Key=file_key)
+                
+                return {
+                    "success": True,
+                    "transcription": transcript_text,
+                    "simulated": False
+                }
+            elif job_status == 'FAILED':
+                failure_reason = status['TranscriptionJob'].get('FailureReason', 'Transcription failed')
+                logger.error(f"❌ Transcription échouée: {failure_reason}")
+                return {
+                    "success": False,
+                    "error": failure_reason
+                }
+            
+            time.sleep(2)
+            waited += 2
+        
+        logger.warning(f"⏰ Timeout après {max_wait}s")
+        return {"success": False, "error": "Timeout - transcription trop longue"}
+        
+    except Exception as e:
+        logger.error(f"❌ Error transcribing audio: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"success": False, "error": str(e)}
 
 if __name__ == "__main__":
     # Create necessary directories

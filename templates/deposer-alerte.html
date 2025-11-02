@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Déposer une alerte - TechnoPlast</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <style>
+        .alert-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+        .alert-form {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        .btn-record {
+            width: 100%;
+            padding: 1.5rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 2rem;
+        }
+        .btn-record:hover {
+            background: #c82333;
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 1rem;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-submit:hover {
+            background: #1e40af;
+        }
+        .back-link {
+            color: #2563eb;
+            text-decoration: none;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+        .status-message {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .status-recording {
+            background: #fee;
+            color: #dc2626;
+        }
+        .status-success {
+            background: #d1fae5;
+            color: #059669;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚨 Déposer une alerte</h1>
+        </header>
+
+        <div class="alert-container">
+            <a href="/" class="back-link">← Retour au tableau de bord</a>
+            
+            <div class="alert-form">
+                <h2>📢 Signaler un incident</h2>
+                <p style="color: #64748b; margin-bottom: 2rem;">Cliquez sur le bouton pour enregistrer votre déclaration vocale.</p>
+
+                <div id="statusMessage" style="display: none;"></div>
+
+                <button id="recordButton" class="btn-record">
+                    🎤 Commencer l'enregistrement
+                </button>
+
+                <div class="form-group">
+                    <label for="eventType">Type d'événement</label>
+                    <select id="eventType">
+                        <option value="EHS">EHS (Santé & Sécurité)</option>
+                        <option value="ENVIRONMENT">Environnement</option>
+                        <option value="DAMAGE">Dommage matériel</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="classification">Classification</label>
+                    <select id="classification">
+                        <option value="PREVENTIVE_DECLARATION">Déclaration préventive</option>
+                        <option value="NEAR_MISS">Presque-accident</option>
+                        <option value="FIRST_AID">Premiers soins</option>
+                        <option value="INJURY">Blessure</option>
+                        <option value="EQUIPMENT_FAILURE">Défaillance équipement</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="unitId">Unité organisationnelle</label>
+                    <select id="unitId">
+                        <option value="1">Unité 1</option>
+                    </select>
+                </div>
+
+                <button id="submitButton" class="btn-submit" style="display: none;">
+                    Créer l'événement
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+        let transcribedText = '';
+        const recordButton = document.getElementById('recordButton');
+        const submitButton = document.getElementById('submitButton');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // Demander l'accès au microphone au chargement
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                mediaRecorder = new MediaRecorder(stream);
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    audioChunks = [];
+                    
+                    // Envoyer l'audio pour transcription
+                    await transcribeAudio(audioBlob);
+                };
+            })
+            .catch(error => {
+                console.error('Erreur accès micro:', error);
+                showStatus('❌ Impossible d\'accéder au microphone', 'recording');
+            });
+
+        recordButton.addEventListener('click', async () => {
+            if (!mediaRecorder) {
+                alert('Microphone non disponible. Veuillez autoriser l\'accès.');
+                return;
+            }
+
+            if (!isRecording) {
+                // Commencer l'enregistrement
+                audioChunks = [];
+                mediaRecorder.start();
+                isRecording = true;
+                recordButton.textContent = '⏹️ Arrêter l\'enregistrement';
+                recordButton.style.background = '#28a745';
+                showStatus('🔴 Enregistrement en cours... Parlez maintenant!', 'recording');
+            } else {
+                // Arrêter l'enregistrement
+                mediaRecorder.stop();
+                isRecording = false;
+                recordButton.disabled = true;
+                recordButton.textContent = '⏳ Traitement...';
+                showStatus('⏳ Transcription en cours avec AWS...', 'recording');
+            }
+        });
+
+        async function transcribeAudio(audioBlob) {
+            try {
+                const formData = new FormData();
+                formData.append('audio_file', audioBlob, 'recording.wav');
+                
+                console.log('📤 Envoi de l\'audio pour transcription...');
+                
+                const response = await fetch('/api/transcribe-audio', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                console.log('📥 Résultat transcription:', result);
+                
+                if (result.success) {
+                    transcribedText = result.transcription;
+                    const displayText = transcribedText.length > 100 
+                        ? transcribedText.substring(0, 100) + '...' 
+                        : transcribedText;
+                    
+                    showStatus('✅ Transcription terminée: "' + displayText + '"', 'success');
+                    
+                    if (result.simulated) {
+                        showStatus('⚠️ Mode simulation - AWS non configuré. Transcription: "' + displayText + '"', 'recording');
+                    }
+                    
+                    submitButton.style.display = 'block';
+                    recordButton.style.display = 'none';
+                } else {
+                    throw new Error(result.error || 'Erreur de transcription');
+                }
+            } catch (error) {
+                console.error('❌ Erreur transcription:', error);
+                showStatus('❌ Erreur lors de la transcription: ' + error.message, 'recording');
+                recordButton.disabled = false;
+                recordButton.textContent = '🎤 Commencer l\'enregistrement';
+                recordButton.style.background = '#dc3545';
+                isRecording = false;
+            }
+        }
+
+        submitButton.addEventListener('click', async () => {
+            if (!transcribedText || transcribedText.trim().length < 10) {
+                alert('⚠️ La transcription est trop courte (minimum 10 caractères). Veuillez enregistrer à nouveau.');
+                return;
+            }
+            
+            submitButton.disabled = true;
+            submitButton.textContent = '⏳ Création en cours...';
+            
+            const eventData = {
+                declared_by_id: 1,
+                organizational_unit_id: parseInt(document.getElementById('unitId').value),
+                event_type: document.getElementById('eventType').value,
+                classification: document.getElementById('classification').value,
+                description: transcribedText
+            };
+            
+            console.log('📤 Envoi des données:', eventData);
+            
+            try {
+                const response = await fetch('/api/create-event-audio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(eventData)
+                });
+                
+                const result = await response.json();
+                console.log('📥 Réponse serveur:', result);
+                
+                if (response.ok && result.success) {
+                    showStatus('✅ Événement créé avec succès! ID: ' + result.event.event_id, 'success');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    const errorMsg = result.detail || result.message || 'Erreur lors de la création';
+                    throw new Error(errorMsg);
+                }
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+                showStatus('❌ Erreur: ' + error.message, 'recording');
+                submitButton.disabled = false;
+                submitButton.textContent = 'Créer l\'événement';
+            }
+        });
+
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = 'status-message status-' + type;
+            statusMessage.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
