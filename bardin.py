@@ -21,11 +21,22 @@ def query_with_ai(sql_results, user_prompt: str) -> str:
         sql_results: Résultats SQL - peut être:
             - Liste de dictionnaires: [{"id": 1, "name": "test"}, ...]
             - String: "résultat de la requête"
+            - Dict avec 'error' si erreur SQL
         user_prompt: Question ou prompt de l'utilisateur
         
     Returns:
         str: Réponse générée par l'IA
-"""
+    """
+    
+    # Vérifier si sql_results contient une erreur SQL
+    if isinstance(sql_results, dict) and 'error' in sql_results:
+        return "❌ Merci de reformuler la requête."
+    
+    # Vérifier si c'est une string contenant une erreur
+    if isinstance(sql_results, str):
+        error_keywords = ['error', 'erreur', 'exception', 'failed', 'échec', 'syntax error']
+        if any(keyword in sql_results.lower() for keyword in error_keywords):
+            return "❌ Merci de reformuler la requête."
     
     # Récupérer les credentials AWS depuis .env
     aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
@@ -34,7 +45,7 @@ def query_with_ai(sql_results, user_prompt: str) -> str:
     aws_region = os.getenv("AWS_DEFAULT_REGION", "us-east-1")
     
     if not aws_access_key or not aws_secret_key:
-        return " Erreur: AWS_ACCESS_KEY_ID et AWS_SECRET_ACCESS_KEY requis dans .env"
+        return "⚠️ Erreur: AWS_ACCESS_KEY_ID et AWS_SECRET_ACCESS_KEY requis dans .env"
     
     # Initialiser le client AWS Bedrock
     try:
@@ -50,7 +61,7 @@ def query_with_ai(sql_results, user_prompt: str) -> str:
         bedrock_runtime = boto3.client('bedrock-runtime', **session_config)
         
     except Exception as e:
-        return f" Erreur lors de l'initialisation AWS Bedrock: {str(e)}"
+        return f"⚠️ Erreur lors de l'initialisation AWS Bedrock: {str(e)}"
     
     if sql_results is None or sql_results == "":
         context = "Aucun résultat trouvé dans la base de données."
