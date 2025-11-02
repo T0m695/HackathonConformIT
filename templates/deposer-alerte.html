@@ -147,20 +147,45 @@
         const statusMessage = document.getElementById('statusMessage');
 
         // Demander l'accès au microphone au chargement
+        let autoStopTimer = null;
+        const MAX_RECORD_MS = 55000; // sécurité: 55s max
+
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(stream => {
                 mediaRecorder = new MediaRecorder(stream);
-                
+
                 mediaRecorder.ondataavailable = (event) => {
-                    audioChunks.push(event.data);
+                    if (event.data && event.data.size > 0) audioChunks.push(event.data);
                 };
-                
+
+                mediaRecorder.onerror = (err) => {
+                    console.error('MediaRecorder error:', err);
+                    showStatus('❌ Erreur lors de l\'enregistrement', 'recording');
+                    isRecording = false;
+                    recordButton.disabled = false;
+                    recordButton.textContent = '🎤 Commencer l\'enregistrement';
+                    recordButton.style.background = '#dc3545';
+                };
+
                 mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    clearTimeout(autoStopTimer);
+                    // Construire le Blob avec le type réel produit par MediaRecorder
+                    const mimeType = audioChunks.length && audioChunks[0].type ? audioChunks[0].type : 'audio/webm';
+                    const audioBlob = new Blob(audioChunks, { type: mimeType });
                     audioChunks = [];
-                    
+
+                    // Mettre à jour l'UI pendant le traitement
+                    recordButton.disabled = true;
+                    recordButton.textContent = '⏳ Traitement...';
+                    showStatus('⏳ Transcription en cours avec AWS...', 'recording');
+
                     // Envoyer l'audio pour transcription
                     await transcribeAudio(audioBlob);
+
+                    // Réactiver si nécessaire (transcribeAudio affichera le submit button)
+                    recordButton.disabled = false;
+                    recordButton.textContent = '🎤 Commencer l\'enregistrement';
+                    recordButton.style.display = 'none';
                 };
             })
             .catch(error => {
@@ -174,21 +199,37 @@
                 return;
             }
 
-            if (!isRecording) {
-                // Commencer l'enregistrement
-                audioChunks = [];
-                mediaRecorder.start();
-                isRecording = true;
-                recordButton.textContent = '⏹️ Arrêter l\'enregistrement';
-                recordButton.style.background = '#28a745';
-                showStatus('🔴 Enregistrement en cours... Parlez maintenant!', 'recording');
-            } else {
-                // Arrêter l'enregistrement
-                mediaRecorder.stop();
+            try {
+                if (mediaRecorder.state !== 'recording') {
+                    // Commencer l'enregistrement
+                    audioChunks = [];
+                    mediaRecorder.start();
+                    isRecording = true;
+                    recordButton.textContent = '⏹️ Arrêter l\'enregistrement';
+                    recordButton.style.background = '#28a745';
+                    showStatus('🔴 Enregistrement en cours... Parlez maintenant!', 'recording');
+
+                    // Sécurité: arrêter automatiquement après MAX_RECORD_MS
+                    autoStopTimer = setTimeout(() => {
+                        if (mediaRecorder && mediaRecorder.state === 'recording') {
+                            console.warn('Auto-stop du média après timeout');
+                            mediaRecorder.stop();
+                        }
+                    }, MAX_RECORD_MS);
+                } else {
+                    // Arrêter l'enregistrement
+                    if (mediaRecorder.state === 'recording') {
+                        mediaRecorder.stop();
+                    }
+                    isRecording = false;
+                }
+            } catch (err) {
+                console.error('Erreur lors du contrôle de l\'enregistrement:', err);
+                showStatus('❌ Erreur lors du contrôle de l\'enregistrement', 'recording');
                 isRecording = false;
-                recordButton.disabled = true;
-                recordButton.textContent = '⏳ Traitement...';
-                showStatus('⏳ Transcription en cours avec AWS...', 'recording');
+                recordButton.disabled = false;
+                recordButton.textContent = '🎤 Commencer l\'enregistrement';
+                recordButton.style.background = '#dc3545';
             }
         });
 

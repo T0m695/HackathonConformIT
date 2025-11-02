@@ -365,33 +365,46 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
         
         logger.info(f"🎤 Début de la transcription - Bucket: {S3_BUCKET_NAME}, Région: {REGION}")
         
-        # Sauvegarder temporairement le fichier
-        temp_file = f"/tmp/audio_{uuid.uuid4()}.wav"
+        # Sauvegarder temporairement le fichier en respectant son type
+        content = await audio_file.read()
+        content_type = (audio_file.content_type or '').split(';')[0]
+        ext = 'wav'
+        if '/' in content_type:
+            ext = content_type.split('/')[-1]
+        # Normalisation simple
+        if ext in ['x-wav', 'x-wav;codec=1']:
+            ext = 'wav'
+        if ext == 'mpeg':
+            ext = 'mp3'
+        allowed_exts = ['wav', 'mp3', 'webm', 'ogg', 'flac', 'mp4']
+        if ext not in allowed_exts:
+            ext = 'wav'
+
+        temp_file = f"/tmp/audio_{uuid.uuid4()}.{ext}"
         with open(temp_file, "wb") as f:
-            content = await audio_file.read()
             f.write(content)
-        
-        logger.info(f"📁 Fichier audio sauvegardé: {temp_file} ({len(content)} bytes)")
-        
+
+        logger.info(f"📁 Fichier audio sauvegardé: {temp_file} ({len(content)} bytes), detected ext={ext}")
+
         # Upload vers S3
         s3_client = boto3.client('s3', region_name=REGION)
         transcribe_client = boto3.client('transcribe', region_name=REGION)
-        
+
         job_name = f"event-transcription-{uuid.uuid4()}"
-        file_key = f"event-audio/{job_name}.wav"
-        
+        file_key = f"event-audio/{job_name}.{ext}"
+
         logger.info(f"☁️ Upload vers S3: s3://{S3_BUCKET_NAME}/{file_key}")
         s3_client.upload_file(temp_file, S3_BUCKET_NAME, file_key)
         os.remove(temp_file)
-        
+
         # Démarrer la transcription
         file_uri = f"s3://{S3_BUCKET_NAME}/{file_key}"
-        logger.info(f"🚀 Démarrage du job Transcribe: {job_name}")
-        
+        logger.info(f"🚀 Démarrage du job Transcribe: {job_name} (format={ext})")
+
         transcribe_client.start_transcription_job(
             TranscriptionJobName=job_name,
             Media={'MediaFileUri': file_uri},
-            MediaFormat='wav',
+            MediaFormat=ext,
             LanguageCode='fr-FR'
         )
         
