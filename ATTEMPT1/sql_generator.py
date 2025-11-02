@@ -20,27 +20,54 @@ class SQLGenerator:
     
     def _build_prompt(self) -> PromptTemplate:
         """Build enhanced prompt template with examples"""
-        template = """Tu es un expert SQL PostgreSQL. Génère UNE SEULE requête SQL valide basée sur le contexte fourni.
+        template = """RÔLE
+Tu es un·e data analyst expert·e en SQL PostgreSQL. Ta mission : produire UNE SEULE requête SQL (PostgreSQL) exacte et exécutable à partir des informations ci-dessous.
 
-RÈGLES STRICTES:
-1. Réponds UNIQUEMENT avec du code SQL PostgreSQL valide
-2. AUCUN texte explicatif avant ou après le SQL
-3. Utilise UNIQUEMENT des SELECT (pas de INSERT/UPDATE/DELETE)
-4. Utilise les noms de colonnes et tables EXACTS du schéma
-5. Ajoute toujours LIMIT 100 si non spécifié par l'utilisateur
-6. Pour les dates: format TIMESTAMP '2024-01-01 00:00:00' ou utilise EXTRACT(YEAR FROM colonne)
-7. Pour les Jointures: utilise explicitement JOIN ... ON ...
-8. Les noms de tables: person, event, organizational_unit, corrective_measure, risk, event_employee, event_risk, event_corrective_measure
-9. Pour les recherches sémantiques (similitude de sens), utilise les colonnes d'embedding avec l'opérateur <-> pour la distance cosine et le placeholder <query_embedding> pour le vecteur de la requête. Exemple: ORDER BY description_embedding <-> <query_embedding> ASC
-10. Utilise LIKE ou ILIKE pour les recherches par mots-clés exacts, mais <-> pour les recherches sémantiques.
+CE QUE TU REÇOIS
+• {context} contient DEUX blocs concaténés :
+  1) Contexte Schéma : tables, colonnes (avec descriptions et synonymes), relations et EXEMPLES DE REQUÊTES (few-shot).
+  2) CONTEXTE DE RECHERCHE VECTORIELLE : extraits de textes (snippets) retrouvés dans la BDD (p.ex. table=event, colonne=description) classés par similarité.
 
-CONTEXTE DE LA BASE DE DONNÉES:
-{context}
+STRATÉGIE D’UTILISATION DES DEUX CONTEXTES
+A) Contexte 1 — Schéma
+   - Choisis les noms EXACTS de tables et colonnes à partir du schéma.
+   - Utilise les SYNONYMES fournis pour faire correspondre les mots de la question aux bons champs (ex.: “employé” → person.name).
+   - Construis les JOINs à partir des RELATIONS indiquées (clés étrangères et conditions de jointure).
+   - Si la question ressemble fortement à un des EXEMPLES DE REQUÊTES, inspire-toi de sa structure et adapte uniquement ce qui est nécessaire (filtres, colonnes, LIMIT, etc.).
 
-QUESTION DE L'UTILISATEUR:
+B) Contexte 2 — Snippets textuels (recherche vectorielle)
+   - NE PAS interroger directement ces extraits ; ils servent d’INDICES.
+   - EXTRAIS les entités utiles (mots-clés, noms propres, identifiants, dates, unités, etc.) depuis les snippets.
+   - Utilise ces entités pour écrire des WHERE précis, par ex.:
+       • ... WHERE description ILIKE '%mot_clé%'  (pour mots/phrases exacts)
+       • ... WHERE event_id = 123                 (si un ID est déduit)
+   
+RÈGLES STRICTES (à respecter à la lettre)
+1) Réponds UNIQUEMENT avec du SQL PostgreSQL (pas de texte, pas d’explications).
+2) Un seul statement, de type SELECT ou WITH uniquement (aucun DDL/DML).
+3) Utilise les noms de tables/colonnes EXACTS du schéma ; n’invente rien.
+4) Toujours une syntaxe PostgreSQL valide : JOIN ... ON ..., fonctions/date au format PostgreSQL.
+5) Si l’utilisateur n’a pas fixé de limite, ajoute LIMIT 100 à la fin.
+6) Dates : utilise TIMESTAMP 'YYYY-MM-DD HH:MI:SS' si nécessaire, ou EXTRACT(YEAR FROM colonne) pour filtrer par année.
+7) Mots-clés exacts : LIKE/ILIKE '%mot%'.
+8) Similarité sémantique : opérateur <-> sur colonnes d’embedding + <query_embedding>; ordonne par similarité croissante (ASC).
+9) Pas d’opérations interdites (DROP/ALTER/TRUNCATE/DELETE/UPDATE/INSERT/CREATE, etc.).
+10) Préfère des WHERE précis basés sur entités extraites des snippets ; n’introduis pas de conditions non justifiées par {context} ou {question}.
+11) Si le besoin implique plusieurs tables, respecte les relations listées pour écrire des JOIN sûrs.
+
+CHECKLIST AVANT DE RÉPONDRE (interne, ne rien imprimer)
+- Tables/colonnes existent-elles dans le schéma du Contexte 1 ?
+- Les JOIN suivent-ils les relations documentées ?
+- Les filtres WHERE sont-ils justifiés par {question} et/ou par les entités extraites du Contexte 2 ?
+- LIMIT présent si non spécifié ?
+
+QUESTION UTILISATEUR
 {question}
 
-GÉNÈRE MAINTENANT LA REQUÊTE SQL (uniquement le code, rien d'autre):"""
+CONTEXTE
+{context}
+
+↯ RENDS UNIQUEMENT LA REQUÊTE SQL (aucun texte autour)."""
         
         return PromptTemplate.from_template(template)
     
