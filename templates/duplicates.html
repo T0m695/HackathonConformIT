@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détection de doublons - TechnoPlast</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/duplicates.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <a href="/" class="back-link">← Retour au tableau de bord</a>
+                <h1>🔍 Détection de doublons</h1>
+            </div>
+        </header>
+
+        <div class="duplicates-layout">
+            <!-- Statistiques -->
+            <section class="stats-section">
+                <div class="stats-cards">
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Total de groupes</div>
+                            <div class="stat-value" id="totalGroups">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📝</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Événements en doublon</div>
+                            <div class="stat-value" id="totalDuplicates">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⚠️</div>
+                        <div class="stat-content">
+                            <div class="stat-label">À vérifier</div>
+                            <div class="stat-value" id="toReview">0</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Filtres -->
+            <section class="filters-section">
+                <h2>🔧 Filtres</h2>
+                <div class="filters-container">
+                    <div class="filter-group">
+                        <label for="statusFilter">Statut</label>
+                        <select id="statusFilter">
+                            <option value="all" selected>Tous</option>
+                            <option value="pending">À vérifier</option>
+                            <option value="confirmed">Confirmé</option>
+                            <option value="dismissed">Rejeté</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="dateFilter">Période</label>
+                        <select id="dateFilter">
+                            <option value="all" selected>Toutes</option>
+                            <option value="30">30 derniers jours</option>
+                            <option value="90">90 derniers jours</option>
+                            <option value="365">Cette année</option>
+                        </select>
+                    </div>
+                    <button class="btn-apply-filters" id="applyFilters">Appliquer les filtres</button>
+                </div>
+            </section>
+
+            <!-- Liste des doublons -->
+            <section class="duplicates-section">
+                <div class="section-header">
+                    <h2>📋 Groupes de doublons détectés</h2>
+                    <button class="btn-refresh" id="refreshButton">
+                        <span>🔄</span> Actualiser
+                    </button>
+                </div>
+
+                <div class="duplicates-container" id="duplicatesContainer">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Chargement des doublons...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="/static/js/duplicates.js"></script>
+</body>
+</html>

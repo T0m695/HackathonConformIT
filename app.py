@@ -13,6 +13,7 @@ import os
 from datetime import datetime
 from ATTEMPT1.pipeline import EnhancedRAGPipeline
 from ATTEMPT1.config import logger
+from duplicate_detector import DuplicateDetector
 
 app = FastAPI(title="TechnoPlast Safety Dashboard")
 
@@ -33,6 +34,14 @@ try:
 except Exception as e:
     print(f"⚠️ Erreur initialisation agent visualisation: {e}")
     viz_agent = None
+
+# Initialize duplicate detector
+try:
+    duplicate_detector = DuplicateDetector()
+    print("✅ Détecteur de doublons initialisé avec succès")
+except Exception as e:
+    print(f"⚠️ Erreur initialisation détecteur: {e}")
+    duplicate_detector = None
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -106,6 +115,12 @@ async def event_detail_page(event_id: int):
 async def ask_question_page():
     """Serve the ask question page."""
     with open("templates/ask-question.html", "r", encoding="utf-8") as f:
+        return f.read()
+
+@app.get("/duplicates", response_class=HTMLResponse)
+async def duplicates_page():
+    """Serve the duplicates detection page."""
+    with open("templates/duplicates.html", "r", encoding="utf-8") as f:
         return f.read()
 
 @app.get("/api/event/{event_id}")
@@ -291,6 +306,89 @@ async def healthcheck():
         "agent_available": rag_pipeline is not None,
         "version": "1.0.0"
     }
+
+@app.get("/api/duplicates")
+async def get_duplicates(
+    date_range: int = None
+):
+    """Get duplicate events with real detection."""
+    if not duplicate_detector:
+        raise HTTPException(status_code=503, detail="Détecteur de doublons non disponible")
+    
+    try:
+        # Convertir date_range de string à int si nécessaire
+        if date_range == "all":
+            date_range = None
+        elif date_range:
+            date_range = int(date_range)
+        
+        result = duplicate_detector.detect_duplicates(
+            date_range_days=date_range
+        )
+        
+        return result
+        
+    except Exception as e:
+        print(f"❌ Erreur détection doublons: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/duplicates/merge")
+async def merge_duplicates(request: dict):
+    """Merge duplicate events."""
+    if not duplicate_detector:
+        raise HTTPException(status_code=503, detail="Détecteur de doublons non disponible")
+    
+    try:
+        event_ids = request.get("event_ids", [])
+        keep_id = request.get("keep_id")
+        
+        if not event_ids or not keep_id:
+            raise HTTPException(status_code=400, detail="event_ids et keep_id requis")
+        
+        success = duplicate_detector.merge_events(event_ids, keep_id)
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Événements fusionnés avec succès dans l'événement {keep_id}",
+                "timestamp": datetime.now().isoformat()
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Échec de la fusion")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Erreur fusion: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/duplicates/dismiss")
+async def dismiss_duplicates(request: dict):
+    """Dismiss a group of duplicates."""
+    if not duplicate_detector:
+        raise HTTPException(status_code=503, detail="Détecteur de doublons non disponible")
+    
+    try:
+        event_ids = request.get("event_ids", [])
+        
+        if not event_ids:
+            raise HTTPException(status_code=400, detail="event_ids requis")
+        
+        success = duplicate_detector.dismiss_group(event_ids)
+        
+        return {
+            "success": success,
+            "message": "Groupe ignoré avec succès",
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Erreur dismiss: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     # Create necessary directories
