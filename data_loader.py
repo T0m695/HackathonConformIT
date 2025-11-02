@@ -9,9 +9,9 @@ def load_events(filepath: str = "data/events.sql") -> List[Dict]:
 def format_event(event: Dict) -> str:
     """Formate un événement pour l'affichage."""
     return f"""
-Titre: {event.get('titre', 'N/A')}
-Date: {event.get('date', 'N/A')}
-Lieu: {event.get('lieu', 'N/A')}
-Description: {event.get('description', 'N/A')}
-Catégorie: {event.get('categorie', 'N/A')}
-"""
+            Titre: {event.get('titre', 'N/A')}
+            Date: {event.get('date', 'N/A')}
+            Lieu: {event.get('lieu', 'N/A')}
+            Description: {event.get('description', 'N/A')}
+            Catégorie: {event.get('categorie', 'N/A')}
+            """

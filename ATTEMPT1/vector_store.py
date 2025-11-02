@@ -6,10 +6,10 @@ import shutil
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 
-from config import Config, logger
+from ATTEMPT1.config import Config, logger
 
-from builders import SchemaDocumentBuilder
-from bedrock_utils import BedrockEmbeddings
+from ATTEMPT1.builders import SchemaDocumentBuilder
+from ATTEMPT1.bedrock_utils import BedrockEmbeddings
 
 class VectorStoreManager:
     """Manages the vector store for schema documents."""
@@ -49,31 +49,10 @@ class VectorStoreManager:
             logger.info(f"FAISS index saved to {Config.INDEX_DIR}")
             return vectorstore
     
-    def retrieve_context(self, question: str) -> str:
-        """Retrieve and format relevant context from vector store."""
-        docs = self.retriever.get_relevant_documents(question)
-        
-        # Prioritize examples, then tables, then relationships
-        sorted_docs = sorted(docs, key=lambda d: {
-            "example": 0,
-            "table": 1,
-            "column": 2,
-            "relationship": 3
-        }.get(d.metadata.get("type", "other"), 4))
-        
-        context = "\n\n".join([
-            f"[{doc.metadata.get('type', 'info').upper()}]\n{doc.page_content}"
-            for doc in sorted_docs
-        ])
-        
-        logger.info(f"Retrieved {len(docs)} relevant documents")
-        logger.debug(f"Schema vector search output (context):\n{context}")  # Added debug logging for schema vector search output
-        print("\n🧠 Contexte récupéré de la recherche vectorielle sur le schéma:")  # Added CLI print
-        print("─" * 70)
-        print(context)
-        print("─" * 70)
-        
-        return context
+    def retrieve_context(self, query: str) -> str:
+        """Get relevant schema context for a query."""
+        docs = self.vectorstore.similarity_search(query, k=Config.TOP_K_RETRIEVAL)
+        return "\n\n".join([doc.page_content for doc in docs])
     
     def rebuild(self):
         """Rebuild FAISS index from schema"""

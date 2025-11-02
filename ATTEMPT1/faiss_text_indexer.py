@@ -8,8 +8,8 @@ import numpy as np
 import faiss
 
 from typing import List, Dict, Tuple, Optional
-from config import Config, logger
-from bedrock_utils import invoke_embedding, invoke_embeddings_batch
+from ATTEMPT1.config import Config, logger
+from ATTEMPT1.bedrock_utils import invoke_embedding, invoke_embeddings_batch
 
 class FAISSTextIndexer:
     """Gère les index FAISS pour les champs TEXT de la base de données (VERSION OPTIMISÉE)"""
@@ -182,21 +182,18 @@ class FAISSTextIndexer:
         finally:
             conn.close()
     
-    def build_all_indexes(self, batch_size: int = 50, max_workers: int = 10):
+    def build_faiss_indexes(self, batch_size: int = 50, max_workers: int = 5) -> None:
         """Construit les index FAISS pour toutes les colonnes TEXT (OPTIMISÉ)"""
         conn = self._get_db_connection()
+        
         try:
             cur = conn.cursor()
-            
-            # Trouver toutes les colonnes TEXT
             cur.execute("""
-                SELECT table_name, column_name 
-                FROM information_schema.columns 
-                WHERE table_schema = 'public' 
-                AND data_type = 'text'
-                ORDER BY table_name, column_name;
+                SELECT table_name, column_name
+                FROM information_schema.columns
+                WHERE data_type = 'text'
+                AND table_schema = 'public'
             """)
-            
             text_columns = cur.fetchall()
             
             print(f"\n📚 Construction RAPIDE des index FAISS pour {len(text_columns)} colonnes TEXT...")
@@ -207,7 +204,6 @@ class FAISSTextIndexer:
                 self.build_index_for_column(table, column, batch_size, max_workers)
             
             print("\n✅ Tous les index FAISS ont été construits!")
-        
         finally:
             conn.close()
     

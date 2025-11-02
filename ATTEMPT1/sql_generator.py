@@ -6,9 +6,9 @@ from langchain_community.utilities import SQLDatabase
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.messages import HumanMessage, AIMessage
 
-from config import Config, logger
-from validators import SQLValidator
-from bedrock_utils import invoke_llm, invoke_embedding
+from ATTEMPT1.config import Config, logger
+from ATTEMPT1.validators import SQLValidator
+from ATTEMPT1.bedrock_utils import invoke_llm, invoke_embedding
 
 class SQLGenerator:
     """Handles SQL query generation, validation, and execution."""
@@ -97,9 +97,15 @@ GÉNÈRE MAINTENANT LA REQUÊTE SQL (uniquement le code, rien d'autre):"""
                 
                 if attempt == Config.MAX_SQL_RETRIES - 1:
                     raise RuntimeError(f"SQL failed after {Config.MAX_SQL_RETRIES} attempts: {exc}")
-                
-                # Generate corrected SQL
-                fix_prompt = f"""La requête SQL PostgreSQL suivante a provoqué une erreur. Corrige-la.
+
+    def update_history(self, question: str, sql: str, result: str) -> None:
+        """Update chat history with the latest interaction"""
+        self.chat_history.add_user_message(question)
+        self.chat_history.add_ai_message(f"SQL: {sql}\nResult: {result}")
+
+    def fix_sql_error(self, sql: str, exc: str, question: str, context: str, query_emb: str = "", attempt: int = 0) -> str:
+        """Generate a corrected SQL query after an error"""
+        fix_prompt = f"""La requête SQL PostgreSQL suivante a provoqué une erreur. Corrige-la.
 
 ERREUR EXACTE:
 {exc}
@@ -121,14 +127,13 @@ INSTRUCTIONS:
 - Pour les recherches sémantiques, utilise <query_embedding> si nécessaire
 
 SQL CORRIGÉ:"""
-                
-                corrected = invoke_llm(fix_prompt)
-                sql = SQLValidator.extract_sql(corrected)
-                sql = sql.replace('<query_embedding>', query_emb)
-                logger.info(f"Corrected SQL (attempt {attempt + 2}):\n{sql}")
-                logger.debug(f"Corrected SQL query:\n{sql}")  # Added debug for corrected SQL
         
-        raise RuntimeError("Should not reach here")
+        corrected = invoke_llm(fix_prompt)
+        sql = SQLValidator.extract_sql(corrected)
+        sql = sql.replace('<query_embedding>', query_emb)
+        logger.info(f"Corrected SQL (attempt {attempt + 2}):\n{sql}")
+        logger.debug(f"Corrected SQL query:\n{sql}")  # Added debug for corrected SQL
+        return sql
     
     def update_history(self, question: str, sql: str, result: str):
         """Update chat history."""

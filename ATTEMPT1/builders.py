@@ -4,7 +4,7 @@ from typing import List, Dict
 
 from langchain_core.documents import Document
 
-from config import logger
+from ATTEMPT1.config import logger
 
 class SchemaDocumentBuilder:
     """Builds rich documents from schema with synonyms and descriptions"""
@@ -32,7 +32,7 @@ class SchemaDocumentBuilder:
                     all_synonyms.extend(synonyms)
                 
                 columns_details.append(col_text)
-                if col['type'] == "TEXT":
+                if 'TEXT' in col['type']:
                     texts_elements.append("")
             # Main table document with full context
             content = f"""Table: {table_name}
@@ -75,9 +75,9 @@ class SchemaDocumentBuilder:
         # 2. Relationship documents with descriptions
         for rel in schema.get("relationships", []):
             content = f"""Relation: {rel['from']} -> {rel['to']}
-Type: {rel.get('type', 'foreign_key')}
-Condition de jointure: {rel['from']}.{rel['on']} = {rel['to']}.{rel['on']}
-Description: {rel.get('description', 'Clé étrangère standard')}"""
+                        Type: {rel.get('type', 'foreign_key')}
+                        Condition de jointure: {rel['from']}.{rel['on']} = {rel['to']}.{rel['on']}
+                        Description: {rel.get('description', 'Clé étrangère standard')}"""
             
             docs.append(Document(
                 page_content=content,
@@ -91,10 +91,9 @@ Description: {rel.get('description', 'Clé étrangère standard')}"""
         # 3. Sample query documents (few-shot examples) - MOST IMPORTANT
         for sq in schema.get("sample_queries", []):
             content = f"""EXEMPLE DE REQUÊTE:
-Question en langage naturel: {sq['natural_language']}
-Requête SQL correspondante:
-{sq['sql']}"""
-            
+            Question en langage naturel: {sq['natural_language']}
+            Requête SQL correspondante:
+            {sq['sql']}"""            
             docs.append(Document(
                 page_content=content,
                 metadata={

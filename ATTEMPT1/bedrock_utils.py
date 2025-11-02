@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from langchain_core.embeddings import Embeddings
 
-from config import Config, logger
+from ATTEMPT1.config import Config, logger
 
 def _get_bedrock_client():
     region = os.getenv("AWS_DEFAULT_REGION", "us-east-1")

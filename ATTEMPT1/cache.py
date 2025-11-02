@@ -4,7 +4,7 @@ import re
 from typing import Dict, Optional, Tuple
 from datetime import datetime, timedelta
 import os
-from config import Config, logger
+from ATTEMPT1.config import Config, logger
 
 try:
     import redis

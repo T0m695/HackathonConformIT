@@ -6,12 +6,12 @@ import psycopg2
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional
 
-from config import Config, logger
-from cache import CacheManager
-from vector_store import VectorStoreManager
-from sql_generator import SQLGenerator
-from bedrock_utils import invoke_embedding
-from faiss_text_indexer import FAISSTextIndexer
+from ATTEMPT1.config import Config, logger
+from ATTEMPT1.cache import CacheManager
+from ATTEMPT1.vector_store import VectorStoreManager
+from ATTEMPT1.sql_generator import SQLGenerator
+from ATTEMPT1.bedrock_utils import invoke_embedding
+from ATTEMPT1.faiss_text_indexer import FAISSTextIndexer
 
 class EnhancedRAGPipeline:
     """Enhanced RAG pipeline with integrated FAISS text search."""
@@ -21,6 +21,7 @@ class EnhancedRAGPipeline:
         self.vector_manager = VectorStoreManager(schema_path)
         self.sql_generator = SQLGenerator(Config.DB_URI)
         self.text_indexer = FAISSTextIndexer()
+        self.text_indexer.build_faiss_indexes()
         logger.info("RAG Pipeline initialized with integrated FAISS text search")
     
     def _detect_text_search_need(self, question: str) -> Optional[Tuple[str, str]]:

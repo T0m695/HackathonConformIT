@@ -11,7 +11,7 @@ class Config:
     CLAUDE_MODEL = "anthropic.claude-3-haiku-20240307-v1:0"
     
     # Database
-    DB_URI = f"postgresql+psycopg2://postgres:{os.getenv('POSTGRES_PASSWORD','yourpass')}@localhost:5432/events_db"
+    DB_URI = "postgresql+psycopg2://postgres:admin@db:5432/hackathon"
     
     # Vector Store
     INDEX_DIR = "faiss_index"
@@ -27,7 +27,7 @@ class Config:
     
     # Vector
     VECTOR_DIM = 1536  # Titan Embeddings v1
-    SCHEMA_PATH = "schema.json"
+    SCHEMA_PATH = "/app/schema.json"
     
     # ============================================
     # PARAMÈTRES D'OPTIMISATION BATCH EMBEDDINGS
@@ -37,9 +37,7 @@ class Config:
     # Recommandé: 20-100 selon la taille des textes
     EMBEDDING_BATCH_SIZE = 50
     
-    # Nombre de workers parallèles pour Bedrock
-    # Recommandé: 5-15 (attention aux limites AWS)
-    # Plus élevé = plus rapide, mais risque de throttling
+
     EMBEDDING_MAX_WORKERS = 10
     
     # Délai entre requêtes (secondes) pour éviter rate limiting

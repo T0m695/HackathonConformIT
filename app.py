@@ -5,21 +5,23 @@ from pydantic import BaseModel
 import uvicorn
 import psycopg2
 import psycopg2.extras
-from agent import EventAgent
+import json
 from database import get_connection, init_database
 from typing import Dict, List
 import os
 from datetime import datetime
+from ATTEMPT1.pipeline import EnhancedRAGPipeline
+from ATTEMPT1.config import logger
 
 app = FastAPI(title="TechnoPlast Safety Dashboard")
 
-# Initialize agent
+# Initialize RAG pipeline
 try:
-    agent = EventAgent()
+    rag_pipeline = EnhancedRAGPipeline()
     print("✅ Agent IA initialisé avec succès")
 except Exception as e:
-    print(f"⚠️ Erreur initialisation agent: {e}")
-    agent = None
+    logger.error(f"⚠️ Erreur initialisation agent: {e}")
+    rag_pipeline = None
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -40,16 +42,30 @@ async def root():
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """Handle chat requests from the frontend."""
-    if not agent:
+    if not rag_pipeline:
         raise HTTPException(status_code=503, detail="Agent IA non disponible")
     
     try:
-        response = agent.search_events(request.message)
+        result = rag_pipeline.ask(request.message)
+        # The result will be a dict with SQL and results
+        if not result.get('success'):
+            response = f"Erreur: {result.get('error', 'Une erreur est survenue')}"
+        else:
+            # Format the response with SQL and results
+            sql = result.get('sql', 'Aucune requête SQL générée')
+            sql_result = result.get('result', 'Aucun résultat trouvé')
+            response = f"SQL généré:\n{sql}\n\nRésultats:\n"
+            if isinstance(sql_result, (list, dict)):
+                response += json.dumps(sql_result, ensure_ascii=False, indent=2)
+            else:
+                response += str(sql_result)
+        
         return ChatResponse(
-            response=response,
+            response=str(response),
             timestamp=datetime.now().isoformat()
         )
     except Exception as e:
+        logger.error(f"Error in chat endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/event/{event_id}", response_class=HTMLResponse)
@@ -232,12 +248,14 @@ async def get_metrics(duration: int = 12):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/health")
-async def health_check():
-    """Health check endpoint."""
+async def healthcheck():
+    """Check application health status."""
     return {
         "status": "healthy",
-        "agent_available": agent is not None,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
+        "database_connected": True,
+        "agent_available": rag_pipeline is not None,
+        "version": "1.0.0"
     }
 
 if __name__ == "__main__":
