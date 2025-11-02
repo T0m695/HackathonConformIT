@@ -1,0 +1,201 @@
+person_id,matricule,name,family_name,role
+1001,EMP-00001,Marie-Claude,Beaumont,"Director of Health, Safety and Environment"
+1002,EMP-00002,Jean-François,Lefebvre,Plant Manager
+1003,EMP-00003,Samira,El-Khoury,EHS Coordinator
+1004,EMP-00004,Michael,Chen,Production Supervisor - Day Shift
+1005,EMP-00005,Isabelle,Tremblay,Quality Control Manager
+1006,EMP-00006,Carlos,Rodriguez,Maintenance Manager
+1007,EMP-00007,Anh,Nguyen,Safety Officer
+1008,EMP-00008,François,Gagnon,Injection Molding Operator - Line A
+1009,EMP-00009,Fatima,Benzema,Human Resources Manager
+1010,EMP-00010,David,O'Connor,Warehouse Supervisor
+1011,EMP-00011,Nathalie,Dubois,Environmental Compliance Specialist
+1012,EMP-00012,Roberto,Santos,Forklift Operator
+1013,EMP-00013,Sophie,Lapointe,Quality Control Technician
+1014,EMP-00014,Ahmed,Hassan,Injection Molding Operator - Line B
+1015,EMP-00015,Julie,Bergeron,Production Supervisor - Evening Shift
+1016,EMP-00016,Marco,Rossi,Mechanical Maintenance Technician
+1017,EMP-00017,Chantal,Côté,Assembly Line Lead
+1018,EMP-00018,Raj,Patel,Process Engineer
+1019,EMP-00019,Mélanie,Fortin,Shipping and Receiving Clerk
+1020,EMP-00020,Hassan,Diallo,Material Handler
+1021,EMP-00021,Stéphane,Moreau,Mold Technician
+1022,EMP-00022,Elena,Popescu,Chemical Mixing Operator
+1023,EMP-00023,Pierre,Bouchard,Production Planner
+1024,EMP-00024,Yasmin,Ali,Injection Molding Operator - Line C
+1025,EMP-00025,Daniel,Kim,Electrical Maintenance Technician
+1026,EMP-00026,Catherine,Leblanc,Quality Inspector
+1027,EMP-00027,Luis,Fernandez,Assembly Operator
+1028,EMP-00028,Amélie,Roy,Training Coordinator
+1029,EMP-00029,James,Thompson,Injection Molding Operator - Line D
+1030,EMP-00030,Karim,Bouazizi,Machine Setter - Day Shift
+1031,EMP-00031,Valérie,Pelletier,Materials Supervisor
+1032,EMP-00032,Giovanni,Bianchi,CNC Operator
+1033,EMP-00033,Sylvie,Gauthier,Administrative Assistant
+1034,EMP-00034,Mohamed,Ibrahim,Regrind Operator
+1035,EMP-00035,Patricia,Martin,Packaging Supervisor
+1036,EMP-00036,Tran,Le,Quality Control Lab Technician
+1037,EMP-00037,André,Paradis,Production Supervisor - Night Shift
+1038,EMP-00038,Priya,Sharma,Industrial Engineer
+1039,EMP-00039,Luc,Girard,Maintenance Technician
+1040,EMP-00040,Ana,Silva,Assembly Operator
+1041,EMP-00041,Martin,Lavoie,Crane Operator
+1042,EMP-00042,Olga,Ivanova,Composite Materials Technician
+1043,EMP-00043,Richard,Beaulieu,Tool Room Supervisor
+1044,EMP-00044,Amina,Mansour,Material Handler
+1045,EMP-00045,Patrick,Ouellet,Injection Molding Technician
+1046,EMP-00046,Linh,Tran,Quality Assurance Specialist
+1047,EMP-00047,Marc,Hébert,Warehouse Associate
+1048,EMP-00048,Svetlana,Petrov,Machine Setter - Evening Shift
+1049,EMP-00049,Éric,Champagne,Facilities Coordinator
+1050,EMP-00050,Fatou,Ndiaye,Production Operator
+1051,EMP-00051,Guillaume,Deschamps,Operations Manager
+1052,EMP-00052,Hana,Al-Rashid,Occupational Health Nurse
+1053,EMP-00053,Benoit,Arsenault,Injection Molding Operator - Line A
+1054,EMP-00054,Jing,Wang,Materials Engineer
+1055,EMP-00055,Christine,Desrosiers,Purchasing Coordinator
+1056,EMP-00056,Diego,Morales,Assembly Operator
+1057,EMP-00057,Karine,Cloutier,Safety Trainer
+1058,EMP-00058,Emmanuel,Kouassi,Machine Operator - Evening Shift
+1059,EMP-00059,Anna,Kowalski,Financial Controller
+1060,EMP-00060,Youssef,Zaidi,Injection Molding Operator - Line B
+1061,EMP-00061,Danielle,Rousseau,Customer Service Representative
+1062,EMP-00062,Thanh,Pham,Maintenance Planner
+1063,EMP-00063,Alain,Mercier,Ergonomics Specialist
+1064,EMP-00064,Mariam,Osman,Material Handler
+1065,EMP-00065,Sébastien,Carrier,Production Engineer
+1066,EMP-00066,Lucia,Martinez,Packaging Operator
+1067,EMP-00067,Robert,Fournier,Injection Molding Setter
+1068,EMP-00068,Mei,Zhang,Quality Control Inspector
+1069,EMP-00069,Simon,Bélanger,Chemical Safety Officer
+1070,EMP-00070,Tatiana,Volkov,Assembly Lead - Medical Components
+1071,EMP-00071,Claude,Poirier,Forklift Operator
+1072,EMP-00072,Aisha,Kamara,Production Operator
+1073,EMP-00073,Normand,Vaillancourt,Shipping Coordinator
+1074,EMP-00074,Sofia,Gonzalez,Injection Molding Operator - Line C
+1075,EMP-00075,Vincent,Létourneau,Instrumentation Technician
+1076,EMP-00076,Noor,Ahmed,HR Generalist
+1077,EMP-00077,Réjean,Simard,Mold Maintenance Technician
+1078,EMP-00078,Carmen,Lopez,Assembly Operator
+1079,EMP-00079,Yves,Thibault,Quality Supervisor
+1080,EMP-00080,Deepa,Gupta,Process Quality Engineer
+1081,EMP-00081,Michel,Laflamme,Warehouse Lead - Night Shift
+1082,EMP-00082,Elif,Yilmaz,Material Handler
+1083,EMP-00083,Bruno,Landry,Injection Molding Operator - Line D
+1084,EMP-00084,Nina,Santos,Industrial Hygienist
+1085,EMP-00085,Jacques,Lachance,Receiving Clerk
+1086,EMP-00086,Rania,Abdallah,Composite Materials Operator
+1087,EMP-00087,Gilles,Marchand,Facilities Maintenance Technician
+1088,EMP-00088,Wei,Liu,Production Scheduler
+1089,EMP-00089,Louise,Bernier,Office Manager
+1090,EMP-00090,Ibrahim,Yusuf,Machine Setter - Day Shift
+1091,EMP-00091,Hélène,Bissonette,Accounts Payable Clerk
+1092,EMP-00092,Oscar,Ramirez,Regrind Technician
+1093,EMP-00093,Nicole,Proulx,Inventory Control Specialist
+1094,EMP-00094,Andrei,Popov,Hydraulic Systems Technician
+1095,EMP-00095,Gabrielle,Levesque,Quality Documentation Specialist
+1096,EMP-00096,Kwame,Mensah,Production Operator - Night Shift
+1097,EMP-00097,René,Caron,Tool Maker
+1098,EMP-00098,Layla,Hussein,Assembly Operator
+1099,EMP-00099,Denis,Savard,Purchasing Manager
+1100,EMP-00100,Aya,Tanaka,Automation Technician
+1101,EMP-00101,Maxime,Boisvert,Production Supervisor - Day Shift
+1102,EMP-00102,Sanaa,Rachidi,Fire Safety Coordinator
+1103,EMP-00103,Paul,Demers,Injection Molding Operator - Line A
+1104,EMP-00104,Indira,Singh,Quality Auditor
+1105,EMP-00105,François-Xavier,Mailhot,Maintenance Supervisor
+1106,EMP-00106,Zara,Khan,Assembly Operator
+1107,EMP-00107,Serge,Lafleur,Workplace Safety Representative
+1108,EMP-00108,Bianca,De Luca,Material Handler
+1109,EMP-00109,Mathieu,Gendron,Injection Molding Operator - Line B
+1110,EMP-00110,Amara,Diop,Packaging Operator
+1111,EMP-00111,Jean-Pierre,Nadeau,IT Systems Administrator
+1112,EMP-00112,Yuki,Yamamoto,Process Improvement Engineer
+1113,EMP-00113,Martine,Cyr,Payroll Administrator
+1114,EMP-00114,Abdul,Rahman,Machine Operator - Evening Shift
+1115,EMP-00115,Johanne,Paquette,Emergency Response Team Leader
+1116,EMP-00116,Viktor,Novak,Electrical Technician
+1117,EMP-00117,Claudine,Desjardins,Injection Molding Operator - Line C
+1118,EMP-00118,Tariq,Aziz,Forklift Operator
+1119,EMP-00119,Monique,Dion,Warehouse Associate
+1120,EMP-00120,Dimitri,Sokolov,CNC Machinist
+1121,EMP-00121,Léa,Parent,Quality Control Technician
+1122,EMP-00122,Omar,Said,Production Operator
+1123,EMP-00123,Brigitte,Mathieu,Incident Investigation Specialist
+1124,EMP-00124,Tomas,Jimenez,Machine Setter - Evening Shift
+1125,EMP-00125,Annie,Leclerc,Sales Coordinator
+1126,EMP-00126,Kwesi,Owusu,Material Handler
+1127,EMP-00127,Rémi,Charbonneau,Injection Molding Operator - Line D
+1128,EMP-00128,Sonia,Dasilva,Assembly Lead - Automotive
+1129,EMP-00129,Philippe,Houle,Mold Designer
+1130,EMP-00130,Leila,Farah,Production Operator
+1131,EMP-00131,Alain,Gravel,Maintenance Technician - Night Shift
+1132,EMP-00132,Miriam,Cohen,Supply Chain Analyst
+1133,EMP-00133,Gérard,Boucher,Facilities Manager
+1134,EMP-00134,Fatima-Zahra,El Amrani,Assembly Operator
+1135,EMP-00135,Christian,Gosselin,Injection Molding Technician
+1136,EMP-00136,Natasha,Ivanov,Chemical Inventory Specialist
+1137,EMP-00137,Daniel,Turgeon,Quality Engineer
+1138,EMP-00138,Maya,Kumar,Production Operator
+1139,EMP-00139,Luc-André,Beaudoin,Warehouse Supervisor - Evening Shift
+1140,EMP-00140,Jade,Wong,Process Technician
+1141,EMP-00141,Raoul,Blanchard,Machine Operator - Day Shift
+1142,EMP-00142,Nadia,Belkacem,Receiving Coordinator
+1143,EMP-00143,Raymond,Tessier,Crane Operator
+1144,EMP-00144,Anika,Johansson,Packaging Supervisor
+1145,EMP-00145,Bernard,Allard,Hydraulic Press Operator
+1146,EMP-00146,Samantha,Brown,Composite Materials Lead
+1147,EMP-00147,Normand,Bergeron,Regrind Supervisor
+1148,EMP-00148,Salma,Haddad,Material Handler
+1149,EMP-00149,Mario,Bélisle,Tool and Die Maker
+1150,EMP-00150,Jasmine,Patel,Quality Inspector
+1151,EMP-00151,Lucie,Fillion,Production Supervisor - Evening Shift
+1152,EMP-00152,Jamal,Thompson,Respiratory Protection Program Coordinator
+1153,EMP-00153,Céline,Morin,Injection Molding Operator - Line A
+1154,EMP-00154,Rashid,Habib,Material Handler
+1155,EMP-00155,Sylvain,Jodoin,Automation Engineer
+1156,EMP-00156,Elena,Vasquez,Assembly Operator
+1157,EMP-00157,André,Bellavance,Confined Space Entry Supervisor
+1158,EMP-00158,Sakura,Kobayashi,Quality Systems Coordinator
+1159,EMP-00159,Marcel,Duchesne,Injection Molding Operator - Line B
+1160,EMP-00160,Zainab,Khalil,Production Operator
+1161,EMP-00161,Gaétan,Laplante,Lockout/Tagout Coordinator
+1162,EMP-00162,Isabella,Ricci,Assembly Operator
+1163,EMP-00163,Louis,Desbiens,Machine Setter - Night Shift
+1164,EMP-00164,Amina,Ba,Packaging Operator
+1165,EMP-00165,Stéphane,Couture,Injection Molding Operator - Line C
+1166,EMP-00166,Petra,Mueller,Quality Control Lead
+1167,EMP-00167,Hugues,Fontaine,Forklift Operator
+1168,EMP-00168,Zahra,Nasri,Workplace Hazard Assessment Specialist
+1169,EMP-00169,Fernand,Giguère,Maintenance Technician
+1170,EMP-00170,Chiara,Bianchi,Material Handler
+1171,EMP-00171,Bertrand,Jalbert,Injection Molding Operator - Line D
+1172,EMP-00172,Naomi,Okafor,Production Operator
+1173,EMP-00173,Raynald,Vézina,Tool Room Technician
+1174,EMP-00174,Lina,Sokolova,Composite Materials Operator
+1175,EMP-00175,Éric,Surprenant,Production Coordinator
+1176,EMP-00176,Aaliyah,Jackson,Assembly Operator
+1177,EMP-00177,Julien,Racine,Shipping Clerk
+1178,EMP-00178,Hawa,Traore,Machine Operator - Evening Shift
+1179,EMP-00179,Georges,Plante,Facilities Technician
+1180,EMP-00180,Lidia,Fernandes,Quality Inspector
+1181,EMP-00181,Pascal,Bisson,Injection Molding Technician
+1182,EMP-00182,Marwa,Saleh,Material Handler
+1183,EMP-00183,Normand,Ouellette,Warehouse Lead - Day Shift
+1184,EMP-00184,Yara,Mustafa,Production Operator
+1185,EMP-00185,Claude,Rioux,Electrical Maintenance Lead
+1186,EMP-00186,Valentina,Rossi,Assembly Operator
+1187,EMP-00187,Fernand,Comeau,Regrind Operator
+1188,EMP-00188,Nour,Jaber,Packaging Operator
+1189,EMP-00189,Armand,Lévesque,Mold Repair Technician
+1190,EMP-00190,Sana,Iqbal,Production Operator
+1191,EMP-00191,Rodrigue,Tremblay,Machine Setter - Day Shift
+1192,EMP-00192,Natalya,Kozlov,Quality Technician
+1193,EMP-00193,Gaston,Picard,Crane Operator
+1194,EMP-00194,Amani,Mwangi,Material Handler
+1195,EMP-00195,Conrad,Therrien,Injection Molding Operator - Line A
+1196,EMP-00196,Soraya,Alami,Assembly Operator
+1197,EMP-00197,Yvon,Croteau,Warehouse Associate
+1198,EMP-00198,Laila,Hamdan,Production Operator
+1199,EMP-00199,Roland,Dostie,Maintenance Planner
+1200,EMP-00200,Amal,Farsi,Finishing Operator

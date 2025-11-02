@@ -1,0 +1,76 @@
+risk_id,name,gravity,probability
+376,Machine Entanglement in Injection Molding Equipment,CRITICAL,MEDIUM
+377,Burns from Hot Plastic Material,HIGH,HIGH
+378,Burns from Hot Mold Surfaces,HIGH,MEDIUM
+379,Chemical Exposure to Resin Fumes,HIGH,MEDIUM
+380,Skin Contact with Mold Release Agents,MEDIUM,HIGH
+381,Slip and Fall on Production Floor,MEDIUM,HIGH
+382,Trip Hazard from Air Hoses and Cables,MEDIUM,MEDIUM
+383,Crush Injury from Mold Closing,CRITICAL,LOW
+384,Hand Injury from Sharp Edges on Parts,LOW,HIGH
+385,Repetitive Strain Injury from Part Removal,MEDIUM,VERY_HIGH
+386,Back Injury from Manual Lifting,MEDIUM,HIGH
+387,Forklift Collision with Personnel,CRITICAL,LOW
+388,Forklift Tip-Over,HIGH,LOW
+389,Struck by Falling Materials from Storage Racks,HIGH,MEDIUM
+390,Overhead Crane Load Drop,CRITICAL,VERY_LOW
+391,Pinch Point Injury in Material Handling,MEDIUM,MEDIUM
+392,Noise-Induced Hearing Loss,MEDIUM,HIGH
+393,Chemical Spill in Mixing Room,HIGH,MEDIUM
+394,Fire from Flammable Solvents,CRITICAL,LOW
+395,Explosion Risk in Chemical Storage,CRITICAL,VERY_LOW
+396,Inhalation of Solvent Vapors,HIGH,MEDIUM
+397,Eye Injury from Flying Particles,MEDIUM,MEDIUM
+398,Eye Splash from Chemicals,HIGH,LOW
+399,Electrical Shock from Equipment,CRITICAL,LOW
+400,Electrocution During Maintenance,CRITICAL,VERY_LOW
+401,Arc Flash from Electrical Panel,CRITICAL,VERY_LOW
+402,Lockout/Tagout Failure During Maintenance,CRITICAL,LOW
+403,Caught Between Machine and Fixed Object,CRITICAL,LOW
+404,Laceration from CNC Milling Machine,HIGH,MEDIUM
+405,Respiratory Issues from Composite Fiber Dust,MEDIUM,MEDIUM
+406,Heat Stress in Production Areas,MEDIUM,MEDIUM
+407,Cold Stress in Warehouse During Winter,LOW,MEDIUM
+408,Confined Space Entry Hazard,CRITICAL,VERY_LOW
+409,Inadequate Ventilation Exposure,MEDIUM,LOW
+410,Robotic Arm Malfunction Injury,HIGH,LOW
+411,Hydraulic Fluid Injection Injury,HIGH,VERY_LOW
+412,Pressure Release Burn from Equipment,HIGH,LOW
+413,Carpal Tunnel Syndrome from Assembly Work,MEDIUM,HIGH
+414,Loading Dock Fall from Height,HIGH,MEDIUM
+415,Vehicle Collision in Parking Lot,MEDIUM,LOW
+416,Ladder Fall During Maintenance,HIGH,MEDIUM
+417,Working at Heights Without Fall Protection,CRITICAL,LOW
+418,Contamination in Medical Device Clean Room,MEDIUM,LOW
+419,Improper Waste Disposal Exposure,MEDIUM,LOW
+420,Ergonomic Issues from Prolonged Standing,LOW,VERY_HIGH
+421,Dust Accumulation Fire Hazard,HIGH,LOW
+422,Compressed Air Misuse Injury,MEDIUM,MEDIUM
+423,Tool or Equipment Malfunction,MEDIUM,MEDIUM
+424,Inadequate Personal Protective Equipment,MEDIUM,MEDIUM
+425,Workplace Violence or Aggression,MEDIUM,VERY_LOW
+426,Paper Cut from Documentation Handling,LOW,HIGH
+427,Minor Burn from Hot Beverage Spill,LOW,MEDIUM
+428,Eye Strain from Computer Work,LOW,VERY_HIGH
+429,Desk-Related Musculoskeletal Discomfort,LOW,HIGH
+430,Minor Allergic Reaction to Cleaning Products,LOW,LOW
+431,Stress and Mental Fatigue from Workload,LOW,HIGH
+432,Splinter from Wooden Pallets,LOW,MEDIUM
+433,Mold Contamination in Parts,MEDIUM,LOW
+434,Sudden Machine Startup During Cleaning,CRITICAL,LOW
+435,Exposure to UV Light in Quality Testing,MEDIUM,LOW
+436,Propane Forklift Carbon Monoxide Exposure,HIGH,LOW
+437,Falling Objects from Mezzanine Level,HIGH,LOW
+438,Glass Fiber Skin Irritation,LOW,MEDIUM
+439,Allergic Reaction to Latex Gloves,MEDIUM,LOW
+440,Dehydration During Summer Heat,LOW,MEDIUM
+441,Static Electricity Discharge,LOW,MEDIUM
+442,Hopper Overflow Material Spill,MEDIUM,MEDIUM
+443,Contaminated Regrind Material Quality Issue,LOW,MEDIUM
+444,Ventilation System Failure,HIGH,LOW
+445,Emergency Exit Blockage,HIGH,LOW
+446,Fire Suppression System Accidental Discharge,MEDIUM,VERY_LOW
+447,Resin Dryer Overheating,HIGH,LOW
+448,Cooling Water System Leak,MEDIUM,MEDIUM
+449,Battery Acid Exposure from Floor Equipment,MEDIUM,LOW
+450,Inadequate Lighting Causing Vision Fatigue,LOW,MEDIUM

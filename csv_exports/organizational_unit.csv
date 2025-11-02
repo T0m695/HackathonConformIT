@@ -1,0 +1,26 @@
+unit_id,identifier,name,location
+126,UNIT-001,Injection Molding Line A - Automotive,Main Production Building - North Zone
+127,UNIT-002,Injection Molding Line B - Automotive,Main Production Building - North Zone
+128,UNIT-003,Injection Molding Line C - Medical Components,Main Production Building - Clean Room Area
+129,UNIT-004,Injection Molding Line D - Consumer Packaging,Main Production Building - South Zone
+130,UNIT-005,Assembly and Finishing Department,Main Production Building - East Wing
+131,UNIT-006,Quality Control Laboratory,Administrative Building - Ground Floor
+132,UNIT-007,Raw Materials Warehouse,Warehouse and Shipping - Section A
+133,UNIT-008,Finished Goods Warehouse,Warehouse and Shipping - Section B
+134,UNIT-009,Shipping and Receiving Dock,Warehouse and Shipping - Loading Area
+135,UNIT-010,Chemical Storage and Mixing Room,Chemical Storage Building
+136,UNIT-011,Hazardous Waste Management Area,Chemical Storage Building - Exterior Zone
+137,UNIT-012,Central Maintenance Workshop,Maintenance Workshop - Main Floor
+138,UNIT-013,Mold Manufacturing and Repair Shop,Maintenance Workshop - Tool Room
+139,UNIT-014,Electrical and Instrumentation Shop,Maintenance Workshop - East Section
+140,UNIT-015,Composite Materials Processing Area,Main Production Building - West Wing
+141,UNIT-016,Material Drying and Preparation Room,Main Production Building - Material Handling Zone
+142,UNIT-017,Post-Processing and Heat Treatment,Main Production Building - South Zone
+143,UNIT-018,Regrind and Recycling Department,Warehouse and Shipping - Section C
+144,UNIT-019,Packaging and Labeling Station,Warehouse and Shipping - Prep Area
+145,UNIT-020,"Health, Safety and Environment Office",Administrative Building - 2nd Floor
+146,UNIT-021,Production Engineering and Planning,Administrative Building - 2nd Floor
+147,UNIT-022,Human Resources and Training Center,Administrative Building - 1st Floor
+148,UNIT-023,Administration and Finance Office,Administrative Building - 1st Floor
+149,UNIT-024,Cafeteria and Break Room,Administrative Building - Ground Floor
+150,UNIT-025,Equipment Storage and Spare Parts Room,Maintenance Workshop - Storage Mezzanine
