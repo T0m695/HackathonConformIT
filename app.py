@@ -83,7 +83,7 @@ async def chat(request: ChatRequest):
             sql_result = result.get('result', 'Aucun résultat trouvé')
             # Utiliser bardin.py pour générer une réponse intelligente avec l'IA
             response = query_with_ai(sql_result, request.message)
-
+            
         return ChatResponse(
             response=str(response),
             timestamp=datetime.now().isoformat()

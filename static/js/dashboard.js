@@ -1,5 +1,8 @@
 let categoryChart = null;
 let monthlyChart = null;
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', () => {
@@ -7,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupChat();
     setupSuggestions();
     setupMonthlyDurationChange();
+    setupVoiceInput();
     
     // Refresh metrics every 30 seconds
     setInterval(() => loadMetrics(), 30000);
@@ -213,4 +217,91 @@ function setupSuggestions() {
             sendMessage();
         });
     });
+}
+
+function setupVoiceInput() {
+    const voiceButton = document.getElementById('voiceButton');
+    
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            mediaRecorder = new MediaRecorder(stream);
+            
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) audioChunks.push(e.data);
+            };
+            
+            mediaRecorder.onstop = async () => {
+                voiceButton.classList.remove('recording');
+                showVoiceStatus('⏳ Transcription...', 'transcribing');
+                
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                audioChunks = [];
+                await transcribeAudio(audioBlob);
+            };
+        })
+        .catch(err => {
+            console.error('❌ Micro:', err);
+            voiceButton.disabled = true;
+        });
+    
+    voiceButton.addEventListener('click', () => {
+        if (!mediaRecorder) return;
+        
+        if (!isRecording) {
+            audioChunks = [];
+            mediaRecorder.start();
+            isRecording = true;
+            voiceButton.classList.add('recording');
+            voiceButton.textContent = '⏹️';
+            showVoiceStatus('🔴 Enregistrement...', 'recording');
+            setTimeout(() => { if (isRecording) stopRecording(); }, 30000);
+        } else {
+            stopRecording();
+        }
+    });
+}
+
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        isRecording = false;
+        document.getElementById('voiceButton').textContent = '🎤';
+    }
+}
+
+async function transcribeAudio(audioBlob) {
+    try {
+        const formData = new FormData();
+        formData.append('audio_file', audioBlob, 'recording.wav');
+        
+        const response = await fetch('/api/transcribe-audio', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success && result.transcription) {
+            const text = result.transcription.trim();
+            document.getElementById('chatInput').value = text;
+            showVoiceStatus('✅ "' + text.substring(0, 50) + '..."', 'recording');
+            setTimeout(() => hideVoiceStatus(), 3000);
+        } else {
+            throw new Error(result.error || 'Erreur');
+        }
+    } catch (error) {
+        console.error('❌', error);
+        showVoiceStatus('❌ ' + error.message, 'error');
+        setTimeout(() => hideVoiceStatus(), 3000);
+    }
+}
+
+function showVoiceStatus(msg, type) {
+    const status = document.getElementById('voiceStatus');
+    status.textContent = msg;
+    status.className = `voice-status show ${type}`;
+}
+
+function hideVoiceStatus() {
+    document.getElementById('voiceStatus').className = 'voice-status';
 }

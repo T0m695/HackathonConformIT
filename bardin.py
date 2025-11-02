@@ -45,7 +45,7 @@ def query_with_ai(sql_results, user_prompt: str) -> str:
     aws_region = os.getenv("AWS_DEFAULT_REGION", "us-east-1")
     
     if not aws_access_key or not aws_secret_key:
-        return "⚠️ Erreur: AWS_ACCESS_KEY_ID et AWS_SECRET_ACCESS_KEY requis dans .env"
+        return " Erreur: AWS_ACCESS_KEY_ID et AWS_SECRET_ACCESS_KEY requis dans .env"
     
     # Initialiser le client AWS Bedrock
     try:
