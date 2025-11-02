@@ -21,6 +21,8 @@ Accédez à http://localhost:8000
 #### Option 1 : Docker Compose (Recommandé)
 
 ```bash
+# Placer le fichier de backup à ./sql/event-bis.backup
+
 # Copier le fichier .env.example vers .env et le configurer
 cp .env.example .env
 
@@ -162,6 +164,8 @@ extra_hosts:
 ## 📊 Structure des données
 
 Le système charge les événements (`event`) avec leurs mesures correctives (`corrective_measure`) associées via la table de liaison `event_corrective_measure`.
+
+Le fichier de backup PostgreSQL se trouve à `./sql/event-bis.backup`.
 
 ## 🐳 Docker
 
