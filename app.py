@@ -425,12 +425,26 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
                 
                 result_response = requests.get(transcript_uri)
                 result_data = result_response.json()
+                
+                # Debug: afficher la structure complète
+                logger.info(f"🔍 DEBUG - Résultat complet: {json.dumps(result_data, indent=2)}")
+                
                 transcript_text = result_data['results']['transcripts'][0]['transcript']
                 
-                logger.info(f"✅ Transcription réussie: {transcript_text[:100]}...")
+                logger.info(f"🔍 DEBUG - Longueur transcription: {len(transcript_text)} caractères")
+                logger.info(f"🔍 DEBUG - Transcription brute: '{transcript_text}'")
+                logger.info(f"✅ Transcription réussie: {transcript_text[:100] if transcript_text else '(vide)'}...")
                 
                 # Nettoyage
                 s3_client.delete_object(Bucket=S3_BUCKET_NAME, Key=file_key)
+                
+                # Si la transcription est vide, retourner une erreur
+                if not transcript_text or len(transcript_text.strip()) == 0:
+                    logger.warning("⚠️ La transcription est vide - l'audio ne contient probablement que du silence")
+                    return {
+                        "success": False,
+                        "error": "La transcription est vide. Veuillez parler plus fort ou vérifier votre microphone."
+                    }
                 
                 return {
                     "success": True,
