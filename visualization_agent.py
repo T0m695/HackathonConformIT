@@ -64,7 +64,7 @@ Exemples de dates à reconnaître:
 - "depuis le début de l'année"
 
 
-Peu importe la demande de l'utilisateur, Réponds UNIQUEMENT avec un JSON valide au format suivant:
+Réponds UNIQUEMENT avec un JSON valide au format suivant:
 {{
     "chart_type": "bar|line|pie|doughnut|scatter",
     "data_source": "events_by_category|events_by_month|events_by_severity|events_by_location|measures_by_cost",

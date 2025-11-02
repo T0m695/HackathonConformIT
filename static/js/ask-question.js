@@ -50,7 +50,8 @@ async function sendMessage() {
     const isVisualizationQuery = detectVisualizationQuery(message);
     
     try {
-        const endpoint = isVisualizationQuery ? '/api/visualize' : '/api/chat';
+        //const endpoint = isVisualizationQuery ? '/api/visualize' : '/api/chat';
+        const endpoint = '/api/visualize'; // Forcer l'endpoint de visualisation
         
         const response = await fetch(endpoint, {
             method: 'POST',
