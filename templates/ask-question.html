@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poser une question - TechnoPlast</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/ask-question.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <a href="/" class="back-link">← Retour au tableau de bord</a>
+                <h1>💬 Posez votre question</h1>
+            </div>
+        </header>
+
+        <div class="question-layout">
+            <!-- Left sidebar: Chat history -->
+            <aside class="chart-history-sidebar">
+                <div class="history-header">
+                    <h3>📊 Historique des graphiques</h3>
+                    <button class="history-clear-btn" onclick="clearChartHistory()" title="Effacer l'historique">
+                        🗑️
+                    </button>
+                </div>
+                <div class="chart-history-container" id="chartHistoryContainer">
+                    <div class="history-empty">
+                        <span class="empty-icon">📊</span>
+                        <p>Aucun graphique dans l'historique</p>
+                        <p class="empty-hint">Demandez une visualisation pour commencer!</p>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main content area -->
+            <div class="question-container">
+                <div class="question-intro">
+                    <h2>👋 Bonjour!</h2>
+                    <p>Je suis votre assistant IA spécialisé dans la sécurité industrielle. Posez-moi toutes vos questions concernant les événements de sécurité, les mesures correctives, et les incidents passés.</p>
+                </div>
+
+                <div class="chat-full-screen">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message bot-message">
+                            <div class="message-avatar">🤖</div>
+                            <div class="message-content">
+                                Bonjour! Je suis votre assistant pour trouver des événements de sécurité et des mesures correctives. Comment puis-je vous aider aujourd'hui?
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-wrapper">
+                        <div class="chat-input-container">
+                            <textarea 
+                                id="chatInput" 
+                                placeholder="Posez votre question ici... (Appuyez sur Entrée pour envoyer)"
+                                rows="3"
+                                autocomplete="off"
+                            ></textarea>
+                            <button id="sendButton" class="send-btn">
+                                <span class="btn-text">Envoyer</span>
+                                <span class="btn-icon">📤</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="suggestions-panel">
+                    <h3>💡 Questions suggérées:</h3>
+                    <div class="suggestion-grid">
+                        <button class="suggestion-card">
+                            <span class="suggestion-icon">📊</span>
+                            <span class="suggestion-text">Graphique des événements par catégorie depuis janvier 2023</span>
+                        </button>
+                        <button class="suggestion-card">
+                            <span class="suggestion-icon">📈</span>
+                            <span class="suggestion-text">Évolution mensuelle des incidents sur les 6 derniers mois</span>
+                        </button>
+                        <button class="suggestion-card">
+                            <span class="suggestion-icon">🥧</span>
+                            <span class="suggestion-text">Distribution par gravité pour l'année 2024</span>
+                        </button>
+                        <button class="suggestion-card">
+                            <span class="suggestion-icon">💰</span>
+                            <span class="suggestion-text">Coûts des mesures correctives entre 2022 et 2024</span>
+                        </button>
+                        <button class="suggestion-card">
+                            <span class="suggestion-icon">📍</span>
+                            <span class="suggestion-text">Événements par lieu depuis le début de l'année</span>
+                        </button>
+                        <button class="suggestion-card">
+                            <span class="suggestion-icon">🔍</span>
+                            <span class="suggestion-text">Quels sont les événements des 3 derniers mois?</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/ask-question.js"></script>
+</body>
+</html>

@@ -6,6 +6,7 @@ import uvicorn
 import psycopg2
 import psycopg2.extras
 from agent import EventAgent
+from visualization_agent import VisualizationAgent
 from database import get_connection, init_database
 from typing import Dict, List
 import os
@@ -13,13 +14,20 @@ from datetime import datetime
 
 app = FastAPI(title="TechnoPlast Safety Dashboard")
 
-# Initialize agent
+# Initialize agents
 try:
     agent = EventAgent()
     print("✅ Agent IA initialisé avec succès")
 except Exception as e:
     print(f"⚠️ Erreur initialisation agent: {e}")
     agent = None
+
+try:
+    viz_agent = VisualizationAgent()
+    print("✅ Agent de visualisation initialisé avec succès")
+except Exception as e:
+    print(f"⚠️ Erreur initialisation agent visualisation: {e}")
+    viz_agent = None
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -52,10 +60,32 @@ async def chat(request: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/visualize")
+async def visualize(request: ChatRequest):
+    """Handle visualization requests from the frontend."""
+    if not viz_agent:
+        raise HTTPException(status_code=503, detail="Agent de visualisation non disponible")
+    
+    try:
+        result = viz_agent.process_query(request.message)
+        return {
+            **result,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        print(f"❌ Erreur visualisation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/event/{event_id}", response_class=HTMLResponse)
 async def event_detail_page(event_id: int):
     """Serve the event detail page."""
     with open("templates/event-detail.html", "r", encoding="utf-8") as f:
+        return f.read()
+
+@app.get("/ask", response_class=HTMLResponse)
+async def ask_question_page():
+    """Serve the ask question page."""
+    with open("templates/ask-question.html", "r", encoding="utf-8") as f:
         return f.read()
 
 @app.get("/api/event/{event_id}")
