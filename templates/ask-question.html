@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poser une question - TechnoPlast</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/ask-question.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <a href="/" class="back-link">← Retour au tableau de bord</a>
+                <h1>💬 Posez votre question</h1>
+            </div>
+        </header>
+
+        <div class="question-container">
+            <div class="question-intro">
+                <h2>👋 Bonjour!</h2>
+                <p>Je suis votre assistant IA spécialisé dans la sécurité industrielle. Posez-moi toutes vos questions concernant les événements de sécurité, les mesures correctives, et les incidents passés.</p>
+            </div>
+
+            <div class="chat-full-screen">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message bot-message">
+                        <div class="message-avatar">🤖</div>
+                        <div class="message-content">
+                            Bonjour! Je suis votre assistant pour trouver des événements de sécurité et des mesures correctives. Comment puis-je vous aider aujourd'hui?
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat-input-wrapper">
+                    <div class="chat-input-container">
+                        <textarea 
+                            id="chatInput" 
+                            placeholder="Posez votre question ici... (Appuyez sur Entrée pour envoyer)"
+                            rows="3"
+                            autocomplete="off"
+                        ></textarea>
+                        <button id="sendButton" class="send-btn">
+                            <span class="btn-text">Envoyer</span>
+                            <span class="btn-icon">📤</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="suggestions-panel">
+                <h3>💡 Questions suggérées:</h3>
+                <div class="suggestion-grid">
+                    <button class="suggestion-card">
+                        <span class="suggestion-icon">📊</span>
+                        <span class="suggestion-text">Montre-moi un graphique des événements par catégorie</span>
+                    </button>
+                    <button class="suggestion-card">
+                        <span class="suggestion-icon">📈</span>
+                        <span class="suggestion-text">Affiche l'évolution des incidents sur 12 mois</span>
+                    </button>
+                    <button class="suggestion-card">
+                        <span class="suggestion-icon">🥧</span>
+                        <span class="suggestion-text">Diagramme circulaire de la distribution par gravité</span>
+                    </button>
+                    <button class="suggestion-card">
+                        <span class="suggestion-icon">💰</span>
+                        <span class="suggestion-text">Graphique des coûts des mesures correctives</span>
+                    </button>
+                    <button class="suggestion-card">
+                        <span class="suggestion-icon">📍</span>
+                        <span class="suggestion-text">Visualise les événements par lieu</span>
+                    </button>
+                    <button class="suggestion-card">
+                        <span class="suggestion-icon">🔍</span>
+                        <span class="suggestion-text">Quels sont les événements récents?</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/ask-question.js"></script>
+</body>
+</html>
