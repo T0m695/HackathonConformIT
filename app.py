@@ -13,6 +13,7 @@ import os
 from datetime import datetime
 from ATTEMPT1.pipeline import EnhancedRAGPipeline
 from ATTEMPT1.config import logger
+from bardin import query_with_ai
 
 app = FastAPI(title="TechnoPlast Safety Dashboard")
 
@@ -62,14 +63,9 @@ async def chat(request: ChatRequest):
         if not result.get('success'):
             response = f"Erreur: {result.get('error', 'Une erreur est survenue')}"
         else:
-            # Format the response with SQL and results
-            sql = result.get('sql', 'Aucune requête SQL générée')
             sql_result = result.get('result', 'Aucun résultat trouvé')
-            response = f"SQL généré:\n{sql}\n\nRésultats:\n"
-            if isinstance(sql_result, (list, dict)):
-                response += json.dumps(sql_result, ensure_ascii=False, indent=2)
-            else:
-                response += str(sql_result)
+            # Utiliser bardin.py pour générer une réponse intelligente avec l'IA
+            response = query_with_ai(sql_result, request.message)
         
         return ChatResponse(
             response=str(response),
